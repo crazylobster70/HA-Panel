@@ -2,6 +2,12 @@
 
 🇵🇱 [Polski](#polski) · 🇬🇧 [English](#english)
 
+![Panel – home screen](docs/home.jpg)
+
+| Pogoda / Weather | Wygaszacz z zegarem / Clock screensaver |
+|---|---|
+| ![Weather](docs/weather.jpg) | ![Clock screensaver](docs/saver.jpg) |
+
 ---
 
 ## Polski
