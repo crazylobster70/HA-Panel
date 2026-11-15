@@ -1,0 +1,22 @@
+name: Panel
+version: "1.0.0"
+slug: panel
+url: "https://github.com/crazylobster70/ha-panel"
+description: Glass wall-tablet dashboard for Home Assistant (Polish/English), editable by touch
+arch:
+  - amd64
+  - aarch64
+startup: application
+boot: auto
+init: false
+ingress: true
+ingress_port: 8099
+ingress_stream: true
+panel_icon: mdi:tablet-dashboard
+panel_title: Panel
+homeassistant_api: true
+map:
+  - type: addon_config
+    read_only: false
+  - type: homeassistant_config
+    read_only: true

@@ -1,0 +1,65 @@
+{
+  "version": 2,
+  "views": [
+    {
+      "id": "home",
+      "title": "Dom",
+      "columns": 6,
+      "tiles": [
+        {
+          "id": "wx",
+          "type": "clock_weather",
+          "w": 2,
+          "h": 1,
+          "sun": "sun.sun",
+          "mode": "weather"
+        },
+        {
+          "id": "li",
+          "type": "lights",
+          "w": 1,
+          "h": 1,
+          "lights": {}
+        },
+        {
+          "id": "co",
+          "type": "contacts",
+          "w": 1,
+          "h": 1,
+          "name": "Drzwi i okna",
+          "entities": {}
+        },
+        {
+          "id": "en",
+          "type": "energy",
+          "w": 1,
+          "h": 1
+        },
+        {
+          "id": "ro",
+          "type": "rooms",
+          "w": 1,
+          "h": 1
+        },
+        {
+          "id": "ba",
+          "type": "batteries",
+          "w": 1,
+          "h": 1
+        },
+        {
+          "id": "up",
+          "type": "updates",
+          "w": 1,
+          "h": 1
+        },
+        {
+          "id": "ha",
+          "type": "ha",
+          "w": 1,
+          "h": 1
+        }
+      ]
+    }
+  ]
+}
