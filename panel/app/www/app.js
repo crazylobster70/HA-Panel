@@ -339,7 +339,9 @@
       var nm = c.name || String(attr(c.entity, 'friendly_name') || '').split(' ')[0];
       var sub = [since(c.entity), v !== 'home' && addr && !bad(addr) ? addr.split(',').slice(0, 2).join(',') : null].filter(Boolean).join(' · ');
       return '<div class="h"><span class="ttl" translate="no">' + esc(nm) + '</span></div>' +
-        (pic ? '<div class="pphoto" style="background-image:url(\'api/art/' + c.entity + '?v=' + encodeURIComponent(String(pic).slice(-20)) + '\')"></div>'
+        // własne zdjęcie osoby (c.photo) ma pierwszeństwo przed zdjęciem z Home Assistant
+        (c.photo ? '<div class="pphoto" style="background-image:url(\'' + imgSrc(c.photo) + '\')"></div>'
+          : pic ? '<div class="pphoto" style="background-image:url(\'api/art/' + c.entity + '?v=' + encodeURIComponent(String(pic).slice(-20)) + '\')"></div>'
           : '<div class="ring" style="background:' + z.col + '33;border:2.5px solid ' + z.col + '">' + FI('person', z.col) + '</div>') +
         '<div><div class="big" translate="no">' + esc(z.t) + '</div>' + (sub ? '<div class="small" translate="no">' + esc(sub) + '</div>' : '') + '</div>';
     },
@@ -1341,7 +1343,7 @@
     batteries: { label: 'Baterie', def: { w: 1, h: 1, threshold: 10 }, fields: [['threshold', 'Próg słabej baterii (%)', 'number']] },
     cameras: { label: 'Kamery (wszystkie)', desc: 'Podgląd wszystkich kamer, otwiera podstronę z kamerami', def: { w: 1, h: 1, refresh: 10 }, fields: [['name', 'Nazwa', 'text'], ['refresh', 'Odświeżanie (s)', 'number']] },
     temp: { label: 'Temperatura', desc: 'Jedna temperatura z kolorem wg progów (np. szafka sieciowa)', def: { w: 1, h: 1, warn: 45, hot: 55 }, fields: [['entity', 'Czujnik temperatury', 'entity', ['sensor']], ['name', 'Nazwa', 'text'], ['sub', 'Podpis', 'text'], ['warn', 'Ciepło od (°)', 'number'], ['hot', 'Gorąco od (°)', 'number'], ['internet', 'Internet', 'entity', ['binary_sensor']], ['remote', 'Zdalny dostęp', 'entity', ['binary_sensor']]] },
-    person: { label: 'Osoba', desc: 'Gdzie teraz jest (strefa, adres) i od kiedy', def: { w: 1, h: 1 }, fields: [['entity', 'Osoba', 'entity', ['person']], ['name', 'Nazwa', 'text'], ['address', 'Adres z czujnika (opcjonalnie)', 'entity', ['sensor']]] },
+    person: { label: 'Osoba', desc: 'Gdzie teraz jest (strefa, adres) i od kiedy', def: { w: 1, h: 1 }, fields: [['entity', 'Osoba', 'entity', ['person']], ['name', 'Nazwa', 'text'], ['photo', 'Własne zdjęcie (zamiast zdjęcia z Home Assistant)', 'image'], ['address', 'Adres z czujnika (opcjonalnie)', 'entity', ['sensor']]] },
     ha: { label: 'Home Assistant (ustawienia)', def: { w: 1, h: 1 }, fields: [['name', 'Nazwa', 'text'], ['sub', 'Podpis', 'text'], ['url', 'Adres (domyślnie /config/dashboard)', 'text']] },
     rooms: { label: 'Pomieszczenia (otwiera ekran Dom)', def: { w: 1, h: 1 }, fields: [] }
   };
@@ -1546,7 +1548,7 @@
   var BGN = { turkus: 'Turkus', pomarancz: 'Pomarańcz', niebo: 'Niebo', fiolet: 'Fiolet', zielen: 'Zieleń', grafit: 'Grafit', noc: 'Noc' };
 
   // ---------- Ustawienia (0.6): dwie kolumny jak w Rehome ----------
-  var VERSION = '1.0.5';
+  var VERSION = '1.0.6';
   var SET = { cat: 'ha', q: '' };
   var SET_CATS = [
     [['ha', 'Home Assistant', '#ff9f0a', 'home']],

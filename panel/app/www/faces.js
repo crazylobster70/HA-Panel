@@ -195,13 +195,23 @@
   };
   P.T.photo = {
     noPress: false,
-    render: function (c, t) { var src = photoFor({ opts: { album: c.album || 'images' } }, t && t.n || 0); return src ? '<div class="ph" style="background-image:url(\'' + src + '\')"></div>' : '<div class="ph-none">' + FI('photo', 'rgba(255,255,255,.7)') + '<small>Brak zdjęć</small></div>'; },
+    render: function (c, t) {
+      // własne zdjęcie (wgrane, z www albo encja image.) ma pierwszeństwo przed albumem
+      if (c.image) {
+        return '<div class="ph-img" style="background-image:url(\'' + P.imgSrc(c.image) + '\');background-size:' + (c.fit === 'contain' ? 'contain' : 'cover') + '"></div>' +
+          (c.name ? '<div class="shade"></div><div class="lbl"><span class="big">' + esc(c.name) + '</span></div>' : '');
+      }
+      var src = photoFor({ opts: { album: c.album || 'images' } }, t && t.n || 0); return src ? '<div class="ph" style="background-image:url(\'' + src + '\')"></div>' : '<div class="ph-none">' + FI('photo', 'rgba(255,255,255,.7)') + '<small>Brak zdjęć</small></div>'; },
     init: function (c, t) { t.n = 0; photos(function () { P.mark(t); }); t.timer = setInterval(function () { t.n++; P.mark(t); }, 5 * 60000); },
-    tap: function (c, t) { t.n++; P.mark(t); }
+    tap: function (c, t) {
+      if (c.image) { P.openPop(function () { return '<h2>' + esc(c.name || 'Zdjęcie') + '<button class="x" data-close>×</button></h2><img class="ph-full" src="' + P.imgSrc(c.image) + '" alt="">'; }, { static: true }); return; }
+      t.n++; P.mark(t);
+    },
+    deps: function (c) { return [/^image\./.test(c.image || '') ? c.image : null]; }
   };
   P.SCHEMA.date_cal = { label: 'Data i kalendarz', desc: 'Duża data i kalendarz miesiąca', def: { w: 2, h: 2 }, fields: [] };
   P.SCHEMA.weather_now = { label: 'Pogoda teraz', def: { w: 1, h: 1 }, fields: [['weather', 'Pogoda', 'entity', ['weather']]] };
-  P.SCHEMA.photo = { label: 'Zdjęcie', desc: 'Zdjęcia z folderu www (zmiana co 5 min)', def: { w: 1, h: 1, album: 'images' }, fields: [['album', 'Album', 'select', ['images|Obrazy', 'all|Wszystkie', 'cameras|Kamery']]] };
+  P.SCHEMA.photo = { label: 'Zdjęcie', desc: 'Własne zdjęcie (wgrane z telefonu lub komputera) albo zdjęcia z folderu www', def: { w: 1, h: 1, album: 'images', fit: 'cover' }, fields: [['image', 'Własne zdjęcie', 'image'], ['name', 'Podpis (opcjonalnie)', 'text'], ['fit', 'Dopasowanie', 'select', ['cover|Wypełnij kafel', 'contain|Pokaż całe zdjęcie']], ['album', 'Album (gdy nie ma własnego zdjęcia)', 'select', ['images|Obrazy', 'all|Wszystkie', 'cameras|Kamery']]] };
 
   // ---------- szablony twarzy (Dodaj twarz) ----------
   function tile(type, extra) { var d = JSON.parse(JSON.stringify((P.SCHEMA[type] || {}).def || {})); return Object.assign({ id: P.uid(), type: type }, d, extra || {}); }

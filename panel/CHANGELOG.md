@@ -9,6 +9,11 @@ Each release lists what is new (**Added**), what changed (**Changed**) and what 
 
 ## Polski
 
+### 1.0.6 – 17.11.2026
+**Nowe**
+- Kafel **Zdjęcie**: pole **Własne zdjęcie** – wgrywasz zdjęcie z telefonu lub komputera, wybierasz z folderu www albo zdjęcie z HA. Do tego podpis na dole kafla i dopasowanie („Wypełnij kafel” / „Pokaż całe zdjęcie”). Dotknięcie kafla otwiera zdjęcie w powiększeniu.
+- Kafel **Osoba**: pole **Własne zdjęcie** – pokazuje się w kółku zamiast zdjęcia z Home Assistant.
+
 ### 1.0.5 – 17.11.2026
 **Nowe**
 - Ustawienia → Tło: przełącznik **Tylko na tym ekranie** – telefon, tablet czy komputer może mieć własną tapetę, a pozostałe ekrany zostają przy wspólnej. Po wyłączeniu ekran wraca do wspólnej tapety.
@@ -55,6 +60,11 @@ Each release lists what is new (**Added**), what changed (**Changed**) and what 
 ---
 
 ## English
+
+### 1.0.6 – 2026-11-17
+**Added**
+- **Photo** tile: **Your own photo** field – upload a photo from a phone or computer, pick one from the www folder or use an image from HA. Plus an optional caption and a fit option ("Fill the tile" / "Show the whole photo"). Tapping the tile shows the photo enlarged.
+- **Person** tile: **Own photo** field – shown in the circle instead of the Home Assistant picture.
 
 ### 1.0.5 – 2026-11-17
 **Added**
