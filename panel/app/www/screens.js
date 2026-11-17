@@ -143,6 +143,7 @@
   function byName(a, b) { return (a.unav - b.unav) || (ORDER[a.dom] - ORDER[b.dom]) || a.name.localeCompare(b.name, 'pl'); }
   // własne ustawienia pokoi (layout.rooms[id] = { hide, add, order }) – edycja na ekranie Dom
   var RE = null;
+  var RO = false; // tryb ustawiania kolejności pomieszczeń
   function roomCfg(id) { var l = P.layout(); return (l && l.rooms && l.rooms[id]) || {}; }
   function saveRoom(id, fn) {
     P.change(function () { var l = P.layout(); l.rooms = l.rooms || {}; var r = l.rooms[id] || {}; r.hide = r.hide || []; r.add = r.add || []; r.order = r.order || []; fn(r); l.rooms[id] = r; }, false);
@@ -155,7 +156,10 @@
   function roomList() {
     var by = {};
     P.ids().forEach(function (e) { var a = REG.ent[e]; if (a && roomWorthy(e)) (by[a] = by[a] || []).push(e); });
-    return REG.areas.map(function (a) {
+    var lo = (P.layout() && P.layout().roomOrder) || [];
+    var areas = REG.areas.slice();
+    if (lo.length) areas.sort(function (x, y) { var i = lo.indexOf(x.id), j = lo.indexOf(y.id); return (i < 0 ? 1e4 : i) - (j < 0 ? 1e4 : j); });
+    return areas.map(function (a) {
       var rc = roomCfg(a.id), ord = rc.order || [];
       var ents = roomIds(a.id, by[a.id] || []).map(function (e) { return info(e, a.name); }).sort(byName);
       if (ord.length) ents.sort(function (x, y) { var i = ord.indexOf(x.e), j = ord.indexOf(y.e); return (i < 0 ? 1e4 : i) - (j < 0 ? 1e4 : j) || byName(x, y); });
@@ -242,7 +246,18 @@
       '<button class="sum' + (lightsOn ? ' on' : '') + '" data-go="lights">' + svg('bulb') + lightsOn + '</button>' +
       '<button class="sum' + (opens ? ' warn' : '') + '" data-go="contacts">' + svg(opens ? 'door' : 'lock') + (opens ? opens : '') + '</button>' +
       (ale ? '<button class="sum' + (/^armed|triggered/.test(stv(ale) || '') ? ' warn' : '') + '" data-go="alarm">' + svg('shield') + '</button>' : '') +
+      (!filter ? '<button class="sum' + (RO ? ' blue' : '') + '" data-ract="' + (RO ? 'odone' : 'order') + '">' + (RO ? 'Gotowe' : '⇅ Kolejność') + '</button>' : '') +
       '</div>';
+    if (RO && !filter) {
+      html += section('Kolejność pomieszczeń<span class="rtools"><button class="rbtn" data-ract="oreset">Przywróć</button><button class="rbtn blue" data-ract="odone">Gotowe</button></span>',
+        '<div class="small" style="margin:0 4px 10px">Strzałkami przesuń pomieszczenie wyżej lub niżej. Kolejność zapisuje się od razu.</div><div class="rolist">' +
+        rooms.map(function (r, i) {
+          return '<div class="ro-row"><b translate="no">' + esc(r.name) + '</b><small>' + r.ents.length + '</small>' +
+            '<button class="rbtn" data-ract="oup" data-r="' + r.id + '"' + (i === 0 ? ' disabled' : '') + '>▲</button>' +
+            '<button class="rbtn" data-ract="odown" data-r="' + r.id + '"' + (i === rooms.length - 1 ? ' disabled' : '') + '>▼</button></div>';
+        }).join('') + '</div>');
+      return { title: REG.name || 'Dom', html: html };
+    }
     if (!filter) {
       var cams = cameras();
       if (cams.length) html += section('Kamery', '<div class="cams">' + cams.map(function (c) { return '<div class="cam" data-cam-open="' + c.e + '"><img data-cam="' + c.e + '" alt=""><span>' + esc(c.name) + '</span></div>'; }).join('') + '</div>');
@@ -425,6 +440,7 @@
   P.screenOpen = screenOpen;
   function openScreen(name, arg) {
     if (!SCREENS[name]) return;
+    if (name === 'home') RO = false;
     if (stack.length) stack[stack.length - 1].scroll = ($('scr').querySelector('.scr-b') || {}).scrollTop || 0;
     stack.push({ name: name, arg: arg || {}, scroll: 0 });
     var s = $('scr');
@@ -551,7 +567,7 @@
       var rd = ev.target.closest('[data-rdel]');
       if (rd && RE) { var eid = rd.getAttribute('data-rdel'); saveRoom(RE, function (r) { if (r.hide.indexOf(eid) < 0) r.hide.push(eid); r.add = r.add.filter(function (x) { return x !== eid; }); }); render(true); return; }
       var ra = !moved && ev.target.closest('[data-ract]');
-      if (ra) { roomAct(ra.getAttribute('data-ract'), ra.getAttribute('data-r')); return; }
+      if (ra) { if (!ra.disabled) roomAct(ra.getAttribute('data-ract'), ra.getAttribute('data-r')); return; }
       setTimeout(function () { if (pendingRender && !rT) { pendingRender = false; render(true); } }, 50);
       if (held || moved) return;
       var t = ev.target;
@@ -590,6 +606,16 @@
     else if (k === 'done') { RE = null; render(true); }
     else if (k === 'reset') { if (!confirm('Przywrócić domyślną listę urządzeń w tym pomieszczeniu?')) return; P.change(function () { var l = P.layout(); if (l.rooms) delete l.rooms[id]; }, false); render(true); }
     else if (k === 'add') roomPicker(id);
+    else if (k === 'order') { RO = true; RE = null; render(false); }
+    else if (k === 'odone') { RO = false; render(true); }
+    else if (k === 'oreset') { if (!confirm('Przywrócić domyślną kolejność pomieszczeń?')) return; P.change(function () { delete P.layout().roomOrder; }, false); render(false); }
+    else if (k === 'oup' || k === 'odown') {
+      var ids = roomList().map(function (r) { return r.id; }), i = ids.indexOf(id), j = i + (k === 'oup' ? -1 : 1);
+      if (i < 0 || j < 0 || j >= ids.length) return;
+      ids[i] = ids[j]; ids[j] = id;
+      REG.areas.forEach(function (a) { if (ids.indexOf(a.id) < 0) ids.push(a.id); });
+      P.change(function () { P.layout().roomOrder = ids; }, false); render(true);
+    }
   }
   function roomPicker(id) {
     var q = '', aname = areaName(id);

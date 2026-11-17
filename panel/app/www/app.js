@@ -1519,7 +1519,7 @@
   var BGN = { turkus: 'Turkus', pomarancz: 'Pomarańcz', niebo: 'Niebo', fiolet: 'Fiolet', zielen: 'Zieleń', grafit: 'Grafit', noc: 'Noc' };
 
   // ---------- Ustawienia (0.6): dwie kolumny jak w Rehome ----------
-  var VERSION = '1.0.0';
+  var VERSION = '1.0.1';
   var SET = { cat: 'ha', q: '' };
   var SET_CATS = [
     [['ha', 'Home Assistant', '#ff9f0a', 'home']],

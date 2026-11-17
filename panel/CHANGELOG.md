@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.1
+- Room order: new "⇅ Order" button on the Home screen lets you move rooms up and down. The order is saved straight away and shared by all screens.
+- Kolejność pomieszczeń: nowy przycisk „⇅ Kolejność” na ekranie Dom pozwala przesuwać pomieszczenia wyżej i niżej.
+
 ## 1.0.0
 - First public release: glass wall dashboard with faces, tile pages, touch editing,
   custom icons, mini apps (Music, Clock, Reminders, Weather), night clock, screensaver,

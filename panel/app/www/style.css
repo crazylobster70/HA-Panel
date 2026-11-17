@@ -1204,3 +1204,10 @@ html.vivid .amb.night,html.vivid2 .amb.night{filter:saturate(.8) brightness(.8)!
 /* 0.9.25: długie nazwy urządzeń w dwóch linijkach zamiast ucinania */
 .pill .pt b{white-space:normal;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;overflow:hidden;line-height:1.15;word-break:break-word}
 .pill .pt small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+/* kolejność pomieszczeń */
+.rolist{display:flex;flex-direction:column;gap:8px;max-width:640px}
+.ro-row{display:flex;align-items:center;gap:10px;padding:8px 10px 8px 18px;border-radius:18px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22)}
+.ro-row b{flex:1;font-size:19px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ro-row small{font-size:13px;opacity:.6;margin-right:6px}
+.ro-row .rbtn{width:52px;padding:0;font-size:18px}
+.ro-row .rbtn:disabled{opacity:.3;cursor:default}
