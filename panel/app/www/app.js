@@ -496,7 +496,12 @@
       var wash = items.filter(function (x) { return x.i.wash; }).sort(function (a, b) { return (a.days == null ? 999 : a.days) - (b.days == null ? 999 : b.days); });
       bins.sort(function (a, b) { return (a.days == null ? 999 : a.days) - (b.days == null ? 999 : b.days); });
       var segs = bins.concat(wash).map(function (x) {
-        var i = x.i, ack = stv(i.ack) === 'on', due = x.days != null && x.days <= 1, done = due && ack;
+        // przypomnienie zaczyna się wtedy, gdy automatyzacja w HA kasuje potwierdzenie (domyślnie 17:00):
+        // kosz – w dniu wystawiania od 17:00, mycie – dzień wcześniej od 17:00. Wcześniej tylko data.
+        var hr = new Date().getHours(), from = c.remind_hour != null ? +c.remind_hour : 17;
+        var i = x.i, ack = stv(i.ack) === 'on',
+          due = x.days != null && (i.wash ? (x.days === 0 || (x.days === 1 && hr >= from)) : (x.days === 0 && hr >= from)),
+          done = due && ack;
         var when = x.days == null ? 'brak terminu' : x.days === 0 ? 'dziś' : x.days === 1 ? 'jutro' : DAYS[x.d.getDay()] + ' ' + x.d.getDate() + ' ' + MSH[x.d.getMonth()] + ' · za ' + x.days + ' dni';
         var sub = due ? (done ? '✓ ' + (i.wash ? 'zrobione' : 'wystawiony') : when + ' · dotknij, gdy ' + (i.wash ? 'umyty' : 'wystawiony')) : when;
         var ic = i.wash ? I.wash(i.color) : I.bin(i.color);
@@ -1524,7 +1529,7 @@
   var BGN = { turkus: 'Turkus', pomarancz: 'Pomarańcz', niebo: 'Niebo', fiolet: 'Fiolet', zielen: 'Zieleń', grafit: 'Grafit', noc: 'Noc' };
 
   // ---------- Ustawienia (0.6): dwie kolumny jak w Rehome ----------
-  var VERSION = '1.0.2';
+  var VERSION = '1.0.3';
   var SET = { cat: 'ha', q: '' };
   var SET_CATS = [
     [['ha', 'Home Assistant', '#ff9f0a', 'home']],

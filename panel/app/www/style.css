@@ -1237,3 +1237,8 @@ body.narrow .editbar button.rnd{width:40px;padding:10px 0}
   .set .xbtn{width:44px;height:44px;font-size:20px}
   .set.det .xbtn.sback{display:flex;font-size:30px;font-weight:400;line-height:1}
 }
+
+/* kosz / mycie czeka na potwierdzenie – ikona miga */
+@keyframes binblink{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.9)}}
+.seg.due .ic{animation:binblink 1.4s ease-in-out infinite}
+body.reduce-motion .seg.due .ic{animation:none}
