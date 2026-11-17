@@ -180,6 +180,7 @@
 
   // przycinanie przezroczystych marginesów zdjęć aut (np. zdjęcie BMW z integracji ma duże puste brzegi)
   var TRIM = {};
+  var TRIMA = {}; // proporcje przyciętych zdjęć aut (szer./wys.)
   function trimImg(src, cb) {
     if (TRIM[src] !== undefined) return;
     TRIM[src] = null;
@@ -195,6 +196,7 @@
         var o = document.createElement('canvas'); o.width = x1 - x0 + 1; o.height = y1 - y0 + 1;
         o.getContext('2d').drawImage(cv, x0, y0, o.width, o.height, 0, 0, o.width, o.height);
         TRIM[src] = o.toDataURL('image/png');
+        TRIMA[src] = o.width / o.height;
       } catch (e) { TRIM[src] = src; }
       cb();
     };
@@ -212,7 +214,13 @@
       var col = b == null ? '#888' : b <= 20 ? '#ff453a' : b <= 40 ? '#ff9f0a' : '#30d158';
       var stt = charging ? 'Ładuje' : plugged ? 'Podłączony' : 'Niepodłączony';
       if (c.image) return '<div class="h"><span class="ttl">' + esc(c.name) + '</span></div>' +
-        '<div class="carph"><img src="' + (TRIM[imgSrc(c.image)] || imgSrc(c.image)) + '" alt=""></div>' +
+        '<div class="carph"><img src="' + (TRIM[imgSrc(c.image)] || imgSrc(c.image)) + '" alt=""' + (function () {
+          // wyższe (mniej panoramiczne) zdjęcia aut są automatycznie zmniejszane, żeby auta wyglądały na równe;
+          // własna wielkość w edytorze kafla (img_scale, %) ma pierwszeństwo
+          var a = TRIMA[imgSrc(c.image)], k = c.img_scale ? c.img_scale / 100 : (a ? Math.max(0.75, Math.min(1, a / 2.25)) : 1);
+          k = Math.max(0.3, Math.min(2, k));
+          return k !== 1 ? ' style="transform:scale(' + k.toFixed(3) + ')"' : '';
+        })() + '></div>' +
         '<div class="cbot"><div class="bar"><i style="width:' + (b || 0) + '%;background:' + col + '"></i></div><div class="big">' + (b == null ? '–' : Math.round(b)) + '% · ' + (r == null ? '–' : Math.round(r) + ' mi') + '</div>' +
         '<div class="small">' + esc(stt + (bad(loc) || !loc ? '' : ' · ' + loc)) + '</div></div>';
       return '<div class="h"><span class="ttl">' + esc(c.name) + '</span>' + chip + '</div>' +
@@ -1316,7 +1324,7 @@
     alarm: { label: 'Alarm', def: { w: 1, h: 1, name: 'Alarm' }, fields: [['entity', 'Alarm', 'entity', ['alarm_control_panel']], ['name', 'Nazwa', 'text']] },
     lights: { label: 'Światła (zbiorczo)', desc: 'Ile świateł się świeci i gdzie', def: { w: 1, h: 1, lights: {} }, fields: [['lights', 'Światło → pomieszczenie', 'entmap', ['light'], 'Pomieszczenie']] },
     contacts: { label: 'Drzwi i okna', def: { w: 1, h: 1, name: 'Drzwi i okna', entities: {} }, fields: [['name', 'Nazwa', 'text'], ['entities', 'Czujnik → nazwa', 'entmap', ['binary_sensor'], 'Nazwa']] },
-    car: { label: 'Samochód', def: { w: 1, h: 1, plug_on: 'on' }, fields: [['name', 'Nazwa', 'text'], ['image', 'Zdjęcie auta', 'image'], ['battery', 'Bateria (%)', 'entity', ['sensor']], ['range', 'Zasięg', 'entity', ['sensor']], ['charging', 'Ładowanie', 'entity', ['sensor', 'switch', 'binary_sensor']], ['plug', 'Wtyczka', 'entity', ['sensor', 'binary_sensor']], ['plug_on', 'Stan „podłączony”', 'text'], ['location', 'Miejsce', 'entity', ['sensor', 'device_tracker']]] },
+    car: { label: 'Samochód', def: { w: 1, h: 1, plug_on: 'on' }, fields: [['name', 'Nazwa', 'text'], ['image', 'Zdjęcie auta', 'image'], ['img_scale', 'Wielkość zdjęcia (%)', 'number'], ['battery', 'Bateria (%)', 'entity', ['sensor']], ['range', 'Zasięg', 'entity', ['sensor']], ['charging', 'Ładowanie', 'entity', ['sensor', 'switch', 'binary_sensor']], ['plug', 'Wtyczka', 'entity', ['sensor', 'binary_sensor']], ['plug_on', 'Stan „podłączony”', 'text'], ['location', 'Miejsce', 'entity', ['sensor', 'device_tracker']]] },
     energy: { label: 'Energia', def: { w: 1, h: 1 }, fields: [['power', 'Bieżący pobór (W)', 'entity', ['sensor']], ['rate', 'Stawka', 'entity', ['sensor']], ['off_peak', 'Tania taryfa', 'entity', ['binary_sensor']], ['elec_cost', 'Koszt prądu dziś', 'entity', ['sensor']], ['elec_kwh', 'Zużycie prądu dziś', 'entity', ['sensor']], ['gas_cost', 'Koszt gazu dziś', 'entity', ['sensor']]] },
     network: { label: 'Sieć', def: { w: 1, h: 1 }, fields: [['temp', 'Temperatura', 'entity', ['sensor']], ['temp_name', 'Opis temperatury', 'text'], ['internet', 'Internet', 'entity', ['binary_sensor']], ['remote', 'Zdalny dostęp', 'entity', ['binary_sensor']]] },
     bins: { label: 'Kosze', def: { w: 5, h: 1, items: [] }, fields: [['items', 'Kosze', 'items', [['name', 'Nazwa', 'text'], ['entity', 'Kalendarz', 'entity', ['calendar']], ['ack', 'Potwierdzenie', 'entity', ['input_boolean']], ['color', 'Kolor', 'color'], ['wash', 'To mycie, nie wystawienie', 'bool']]]] },
@@ -1529,7 +1537,7 @@
   var BGN = { turkus: 'Turkus', pomarancz: 'Pomarańcz', niebo: 'Niebo', fiolet: 'Fiolet', zielen: 'Zieleń', grafit: 'Grafit', noc: 'Noc' };
 
   // ---------- Ustawienia (0.6): dwie kolumny jak w Rehome ----------
-  var VERSION = '1.0.3';
+  var VERSION = '1.0.4';
   var SET = { cat: 'ha', q: '' };
   var SET_CATS = [
     [['ha', 'Home Assistant', '#ff9f0a', 'home']],

@@ -1,6 +1,6 @@
 # Panel – glass wall dashboard for Home Assistant
 
-🇵🇱 [Polski](#polski) · 🇬🇧 [English](#english)
+🇵🇱 [Polski](#polski) · 🇬🇧 [English](#english) · 📝 [Historia zmian / Changelog](CHANGELOG.md)
 
 ![Panel – home screen](docs/home.jpg)
 
