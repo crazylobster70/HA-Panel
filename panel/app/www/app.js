@@ -1227,8 +1227,13 @@
     var b = $('editbar');
     b.classList.toggle('hidden', !edit);
     if (edit) b.innerHTML = '<button data-eb="undo" class="rnd" title="Cofnij">↶</button><button data-eb="add" class="rnd" title="Dodaj kafel">＋</button>' +
-      (V().page ? '<button data-eb="settings">⚙ Ustawienia</button>' : '<button data-eb="custom">Dostosuj</button>') + '<button data-eb="done" class="done">Gotowe</button>';
+      (V().page ? '<button data-eb="settings">⚙ Ustawienia</button>' : '<button data-eb="custom">Dostosuj</button><button data-eb="settings" class="rnd nset" title="Ustawienia">⚙</button>') + '<button data-eb="done" class="done">Gotowe</button>';
   }
+  // 0.9.31: przyciski Aplikacje / Ustawienia na telefonie (wąski ekran)
+  $('menubtns').addEventListener('click', function (ev) {
+    var b = ev.target.closest('[data-mb]'); if (!b) return;
+    if (b.getAttribute('data-mb') === 'apps' && PANEL.openLauncher) PANEL.openLauncher(); else settings();
+  });
   $('editbar').addEventListener('click', function (ev) {
     var a = ev.target.getAttribute('data-eb');
     if (a === 'undo') undo(); else if (a === 'add') addTile(); else if (a === 'settings') settings(); else if (a === 'done') exitEdit();
@@ -1519,7 +1524,7 @@
   var BGN = { turkus: 'Turkus', pomarancz: 'Pomarańcz', niebo: 'Niebo', fiolet: 'Fiolet', zielen: 'Zieleń', grafit: 'Grafit', noc: 'Noc' };
 
   // ---------- Ustawienia (0.6): dwie kolumny jak w Rehome ----------
-  var VERSION = '1.0.1';
+  var VERSION = '1.0.2';
   var SET = { cat: 'ha', q: '' };
   var SET_CATS = [
     [['ha', 'Home Assistant', '#ff9f0a', 'home']],
@@ -1610,7 +1615,8 @@
       });
       return rows.length ? '<div class="sg">' + rows.join('') + '</div>' : '';
     }).join('');
-    el.innerHTML = '<div class="set-h"><button class="xbtn" data-sx>✕</button><b class="set-t1">Ustawienia</b><b class="set-t2">' + esc(catName(SET.cat)) + '</b><span class="pclock"></span></div>' +
+    el.classList.toggle('det', !!SET.det);
+    el.innerHTML = '<div class="set-h"><button class="xbtn sback" data-sback>‹</button><button class="xbtn" data-sx>✕</button><b class="set-t1">Ustawienia</b><b class="set-t2">' + esc(catName(SET.cat)) + '</b><span class="pclock"></span></div>' +
       '<div class="set-l"><input class="ssearch" data-sin="q" placeholder="Szukaj" value="' + esc(SET.q) + '">' +
       '<div class="sg prof"><i class="plogo">P</i><span><b>Panel</b><small>Twój dom na ścianie</small></span></div>' + cats +
       '<div class="sg-f">Ustawienia Panelu. Pomieszczenia i sceny Twojego domu ustawiasz w Home Assistant.</div></div>' +
@@ -1620,6 +1626,7 @@
   }
   function settings(cat) {
     if (cat) SET.cat = cat;
+    SET.det = !!cat;
     var el = $('set'); el.classList.remove('hidden');
     renderSettings();
   }
@@ -1629,7 +1636,8 @@
     el.addEventListener('click', function (ev) {
       var t = ev.target;
       if (t.closest('[data-sx]')) return closeSettings();
-      var cc = t.closest('[data-scat]'); if (cc) { SET.cat = cc.getAttribute('data-scat'); return renderSettings(); }
+      if (t.closest('[data-sback]')) { SET.det = false; return renderSettings(); }
+      var cc = t.closest('[data-scat]'); if (cc) { SET.cat = cc.getAttribute('data-scat'); SET.det = true; return renderSettings(); }
       var a = t.closest('[data-sact]'); if (!a) return;
       var k = a.getAttribute('data-sact'), i = +a.getAttribute('data-i');
       var R = function () { renderSettings(true); };

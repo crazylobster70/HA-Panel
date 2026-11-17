@@ -3,7 +3,7 @@ html,body{height:100%}
 body{
   font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display",Inter,Roboto,system-ui,sans-serif;
   -webkit-font-smoothing:antialiased;color:#fff;overflow:hidden;background:#3f8f84;
-  -webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;
+  -webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;
 }
 .grid{height:var(--vh,100vh);max-width:1800px;margin:0 auto;padding:26px 30px;display:grid;gap:18px}
 .tile{
@@ -1211,3 +1211,29 @@ html.vivid .amb.night,html.vivid2 .amb.night{filter:saturate(.8) brightness(.8)!
 .ro-row small{font-size:13px;opacity:.6;margin-right:6px}
 .ro-row .rbtn{width:52px;padding:0;font-size:18px}
 .ro-row .rbtn:disabled{opacity:.3;cursor:default}
+
+/* ================= 0.9.31: telefon ================= */
+.menubtns{display:none}
+body.narrow .menubtns{display:flex;position:absolute;top:max(12px,env(safe-area-inset-top));right:14px;z-index:6;gap:8px}
+body.narrow.editing .menubtns,body.onpage .menubtns{display:none}
+.menubtns button{width:44px;height:44px;border-radius:50%;border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.18);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);padding:0}
+body.narrow:not(.onpage) .grid{padding-top:70px}
+.editbar .nset{display:none}
+body.narrow .editbar .nset{display:block}
+body.narrow .editbar{top:max(12px,env(safe-area-inset-top));max-width:calc(100% - 16px)}
+body.narrow .editbar button{padding:10px 13px;font-size:14px}
+body.narrow .editbar button.rnd{width:40px;padding:10px 0}
+.set .xbtn.sback{display:none}
+@media (max-width:820px){
+  .set{grid-template-rows:auto 1fr}
+  .set-h{padding:max(14px,env(safe-area-inset-top)) 16px 10px;gap:12px}
+  .set-t1,.set-t2{font-size:30px}
+  .set:not(.det) .set-t1{display:block;width:auto;min-width:0;flex:1}
+  .set:not(.det) .set-t2{display:none}
+  .set .pclock{display:none}
+  .set-l{max-height:none}
+  .set:not(.det) .set-r{display:none}
+  .set.det .set-l{display:none}
+  .set .xbtn{width:44px;height:44px;font-size:20px}
+  .set.det .xbtn.sback{display:flex;font-size:30px;font-weight:400;line-height:1}
+}
