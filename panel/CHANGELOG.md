@@ -9,6 +9,10 @@ Each release lists what is new (**Added**), what changed (**Changed**) and what 
 
 ## Polski
 
+### 1.0.5 – 17.11.2026
+**Nowe**
+- Ustawienia → Tło: przełącznik **Tylko na tym ekranie** – telefon, tablet czy komputer może mieć własną tapetę, a pozostałe ekrany zostają przy wspólnej. Po wyłączeniu ekran wraca do wspólnej tapety.
+
 ### 1.0.4 – 17.11.2026
 **Nowe**
 - Kafel auta: opcja **Wielkość zdjęcia (%)** w edytorze kafla – możesz ręcznie powiększyć lub zmniejszyć zdjęcie auta.
@@ -51,6 +55,10 @@ Each release lists what is new (**Added**), what changed (**Changed**) and what 
 ---
 
 ## English
+
+### 1.0.5 – 2026-11-17
+**Added**
+- Settings → Wallpaper: **Only on this screen** switch – a phone, tablet or computer can have its own wallpaper while other screens keep the shared one. Turn it off to go back to the shared wallpaper.
 
 ### 1.0.4 – 2026-11-17
 **Added**

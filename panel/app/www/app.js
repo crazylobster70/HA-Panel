@@ -948,11 +948,20 @@
     document.documentElement.style.setProperty('--ncols', FIT.ncols);
     return FIT;
   }
+  // tło tylko na tym ekranie (localStorage 'panel.bg' = { klucz twarzy: tło })
+  function bgKey(x) { return (x && (x.id || x.title)) || ('i' + layout.views.indexOf(x)); }
+  function localBg() { try { return JSON.parse(localStorage.getItem('panel.bg') || '{}') || {}; } catch (e) { return {}; } }
+  function saveLocalBg(m) { try { localStorage.setItem('panel.bg', JSON.stringify(m)); } catch (e) { /* */ } }
+  function bgOf(x) {
+    var m = localBg(), o = m[bgKey(x)];
+    if (!o && x && x.page && navStack.length) { var f = layout.views[navStack[0]]; if (f) o = m[bgKey(f)]; }
+    return o || (x && x.background) || BG.turkus;
+  }
   function build() {
     if (vi >= layout.views.length) vi = 0;
     fit();
     var v = V(), g = $('view'), cols = v.columns || 5, narrow = FIT.narrow;
-    document.body.style.background = v.background || BG.turkus;
+    document.body.style.background = bgOf(v);
     document.body.classList.toggle('appear-light', v.appearance === 'light'); document.body.classList.toggle('appear-dark', v.appearance === 'dark');
     document.body.classList.toggle('onpage', !!v.page);
     $('back').classList.toggle('hidden', !v.page);
@@ -999,7 +1008,7 @@
   function renderStatic(v, W, H) {
     W = W || 1280; H = H || 800;
     var box = document.createElement('div'); box.className = 'pv'; box.style.width = W + 'px'; box.style.height = H + 'px';
-    box.style.background = v.background || BG.turkus;
+    box.style.background = bgOf(v);
     var FK = window.PANEL && PANEL.FK && v.kind && PANEL.FK[v.kind];
     if (FK) { var fe = document.createElement('div'); fe.className = 'face face-' + v.kind; box.appendChild(fe); fe.innerHTML = FK.html(v, true); return box; }
     var cols = v.columns || 5, P = place(v.tiles || [], cols), rows = Math.max(P.rows, 1);
@@ -1537,7 +1546,7 @@
   var BGN = { turkus: 'Turkus', pomarancz: 'Pomarańcz', niebo: 'Niebo', fiolet: 'Fiolet', zielen: 'Zieleń', grafit: 'Grafit', noc: 'Noc' };
 
   // ---------- Ustawienia (0.6): dwie kolumny jak w Rehome ----------
-  var VERSION = '1.0.4';
+  var VERSION = '1.0.5';
   var SET = { cat: 'ha', q: '' };
   var SET_CATS = [
     [['ha', 'Home Assistant', '#ff9f0a', 'home']],
@@ -1575,8 +1584,9 @@
         sgroup([srow('<a>＋ Pusta twarz</a>', '', ' data-sact="vadd" data-k="empty"', 'link'), srow('<a>＋ Twarz z zegarem</a>', '', ' data-sact="vadd" data-k="clock"', 'link'), srow('<a>＋ Kopia obecnej twarzy</a>', '', ' data-sact="vadd" data-k="copy"', 'link')], '', 'DODAJ');
     } else if (c === 'bg') {
       h = '<div class="sg-h">TWARZ</div>' + faceSel() + '<div class="sg-h">TAPETA</div><div class="swatch2">' + Object.keys(BG).map(function (k) {
-        return '<button data-sact="bg" data-k="' + k + '" class="' + ((v.background || BG.turkus) === BG[k] ? 'sel' : '') + '"><i style="background:' + BG[k] + '"></i><span>' + BGN[k] + '</span></button>';
-      }).join('') + '</div><div class="sg-f">Tapeta jest osobna dla każdej twarzy. Strony kafli i ekran Dom używają tapety twarzy, z której je otworzysz.</div>';
+        return '<button data-sact="bg" data-k="' + k + '" class="' + (bgOf(v) === BG[k] ? 'sel' : '') + '"><i style="background:' + BG[k] + '"></i><span>' + BGN[k] + '</span></button>';
+      }).join('') + '</div><div class="sg-f">Tapeta jest osobna dla każdej twarzy. Strony kafli i ekran Dom używają tapety twarzy, z której je otworzysz.</div>' +
+        sgroup([srow('Tylko na tym ekranie', stoggle(!!localBg()[bgKey(v)], 'bglocal'))], 'Włączone: ta twarz ma na tym urządzeniu własną tapetę, a pozostałe ekrany zostają przy wspólnej. Wyłączone: wspólna tapeta dla wszystkich ekranów.');
     } else if (c === 'grid') {
       h = '<div class="sg-h">TWARZ</div>' + faceSel() + '<div class="sg-h">KOLUMNY</div><div class="segs2">' + [3, 4, 5, 6, 7, 8].map(function (n) { return '<button class="' + ((v.columns || 5) === n ? 'sel' : '') + '" data-sact="cols" data-v="' + n + '">' + n + '</button>'; }).join('') + '</div>' +
         '<div class="sg-h">WYSOKOŚĆ WIERSZY</div><div class="segs2"><button class="' + (v.rowSizes ? 'sel' : '') + '" data-sact="rows" data-v="hv">Ostatni niski (HomeView)</button><button class="' + (!v.rowSizes ? 'sel' : '') + '" data-sact="rows" data-v="eq">Równe</button></div>' +
@@ -1679,7 +1689,16 @@
             tr.map(function (e) { return '<div class="lrow pick" data-pact="car" data-e="' + e + '"><span>' + entLabel(e) + '</span><span>›</span></div>'; }).join('');
         }, { static: true, cls: 'editor', acts: { car: function (el2) { var e = el2.getAttribute('data-e'), q = e.split('.')[1].replace(/_device_tracker$/, ''), nm = attr(e, 'friendly_name') || q; closePop(); add(nm, carTemplate(q, nm)); } } });
       }
-      else if (k === 'bg') { change(function () { V().background = BG[a.getAttribute('data-k')]; }); R(); }
+      else if (k === 'bg') {
+        var nb = BG[a.getAttribute('data-k')], lm = localBg(), bk = bgKey(V());
+        if (lm[bk]) { lm[bk] = nb; saveLocalBg(lm); build(); } else change(function () { V().background = nb; });
+        R();
+      }
+      else if (k === 'bglocal') {
+        var lm2 = localBg(), bk2 = bgKey(V());
+        if (lm2[bk2]) delete lm2[bk2]; else lm2[bk2] = V().background || BG.turkus;
+        saveLocalBg(lm2); build(); R();
+      }
       else if (k === 'cols') { change(function () { V().columns = +a.getAttribute('data-v'); }); R(); }
       else if (k === 'rows') { change(function () { if (a.getAttribute('data-v') === 'eq') delete V().rowSizes; else V().rowSizes = [1, 1, 1, 0.52]; }); R(); }
       else if (k === 'edit') { closeSettings(); navStack = []; if (V().page) { vi = faces()[0]; build(); } enterEdit(); }
