@@ -98,7 +98,7 @@ Each release lists what is new (**Added**), what changed (**Changed**) and what 
 
 ## English
 
-### 1.0.10 – 18.11.2026
+### 1.0.10 – 2026-11-18
 **Added**
 - **Batteries** page: **Edit** button – rename a device, hide it (hidden devices don't count on the tile or in alerts) and pick the battery replacement threshold (10–30%).
 - **Tablets & phones** section – percentage, “Charging” and room. A tablet listed twice in HA (HA app and kiosk) is shown once, with the fresher reading.
