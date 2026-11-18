@@ -9,7 +9,7 @@
   function FIx(n, c) { return window.FI ? FI(n, c) : ''; }
 
   // ---------- ustawienia tego ekranu ----------
-  var DEF = { night: ANDROID, from: 21, to: 7, saver: ANDROID ? 5 : 0, bell: true };
+  var DEF = { night: ANDROID, from: 21, to: 7, saver: ANDROID ? 5 : 0, bell: true, motionOn: false };
   function cfg() { var c = {}; try { c = JSON.parse(localStorage.getItem('panel.amb') || '{}') || {}; } catch (e) { /* */ } var o = {}; Object.keys(DEF).forEach(function (k) { o[k] = c[k] === undefined ? DEF[k] : c[k]; }); return o; }
   try { var c0 = JSON.parse(localStorage.getItem('panel.amb') || '{}') || {}; if (!c0.m090 ) { if (c0.from === 23) c0.from = 21; c0.m090 = 1; localStorage.setItem('panel.amb', JSON.stringify(c0)); } } catch (e) { /* */ }
   function setCfg(k, v) { var c = cfg(); c[k] = v; try { localStorage.setItem('panel.amb', JSON.stringify(c)); } catch (e) { /* */ } }
@@ -138,6 +138,12 @@
     if (oldHook) oldHook(id);
     if (id === null) { bellEnts().forEach(function (e) { ringFrom(e); }); return; }
     if (bellEnts().indexOf(id) >= 0 && ringFrom(id)) openBell(id);
+    // 0.9.39: budzenie ruchem – ruch przed tabletem chowa wygaszacz i wraca na stronę główną (zegar nocny zostaje)
+    var mo = motionList();
+    if (id && mo.indexOf(id) >= 0 && stv(id) === 'on') {
+      idleAt = Date.now();
+      if (mode === 'saver') { hideAmb(); wakeUntil = Date.now() + 2000; homeFace(); }
+    }
   };
   P.testBell = function () { openBell(null, true); };
   P.closeBell = closeBell;
@@ -178,6 +184,28 @@
   function chk(on) { return on ? '<b style="color:#0a84ff">✓</b>' : ''; }
   function row(l, v, act, k) { return '<div class="sr link" data-sact="' + act + '" data-k="' + k + '"><span>' + l + '</span><span class="sv">' + v + '</span></div>'; }
   function seg(act, list, cur) { return '<div class="segs2">' + list.map(function (o) { return '<button class="' + (String(cur) === String(o[0]) ? 'sel' : '') + '" data-sact="' + act + '" data-k="' + o[0] + '">' + o[1] + '</button>'; }).join('') + '</div>'; }
+  // czujnik ruchu TEGO tabletu: Kiosk zgłasza model urządzenia (sensor.*_device, np. „samsung SM-X230”),
+  // a ten sam model jest w przeglądarce tabletu – po nim rozpoznajemy, który czujnik jest nasz
+  function ownSensor() {
+    var ua = navigator.userAgent, hit = null;
+    P.ids().forEach(function (e) {
+      if (hit || !/^sensor\..+_device$/.test(e)) return;
+      var v = String(stv(e) || ''), model = v.split(' ').pop();
+      if (model && model.length >= 4 && ua.indexOf(model) >= 0) {
+        var m = 'binary_sensor.' + e.slice(7, -7) + '_motion';
+        if (P.st(m)) hit = m;
+      }
+    });
+    return hit;
+  }
+  function motionList() { var o = ownSensor(); return cfg().motionOn && o ? [o] : []; }
+  function motionPane() {
+    var o = ownSensor(), on = !!cfg().motionOn;
+    return '<div class="sg-h">BUDZENIE RUCHEM NA TYM EKRANIE</div>' +
+      (o ? '<div class="sg"><div class="sr"><span>Budź ruchem przed tabletem<small>' + esc(String(attr(o, 'friendly_name') || o)) + '</small></span><span class="sv"><button class="tgl' + (on ? ' on' : '') + '" data-sact="amb-motion"><i></i></button></span></div></div>' +
+        '<div class="sg-f">Używa tylko czujnika ruchu tego tabletu. Gdy ktoś podejdzie, wygaszacz z zegarem zniknie i pokaże się strona główna. W nocy zostaje zegar nocny.</div>'
+        : '<div class="sg"><div class="sr"><span>Ten ekran nie ma własnego czujnika ruchu<small>Budzenie ruchem działa na tabletach z aplikacją Kiosk, która udostępnia czujnik ruchu w Home Assistant.</small></span></div></div>');
+  }
   P.ambPane = function () {
     var c = cfg();
     return '<div class="sg-h">ZEGAR NOCNY NA TYM EKRANIE</div><div class="sg">' + '<div class="sr"><span>Zegar nocny</span><span class="sv"><button class="tgl' + (c.night ? ' on' : '') + '" data-sact="amb-night"><i></i></button></span></div></div>' +
@@ -185,6 +213,7 @@
       '<div class="sg-f">W nocy, po minucie bez dotyku, ekran pokazuje przyciemniony czerwony zegar z datą i pogodą. Dotknięcie wraca do Panelu.</div>' +
       '<div class="sg-h">WYGASZACZ</div>' + seg('amb-saver', [[0, 'Wyłączony'], [2, '2 min'], [5, '5 min'], [10, '10 min'], [30, '30 min']], c.saver) +
       '<div class="sg-f">Po tym czasie bez dotyku ekran pokazuje duży zegar z datą i pogodą.</div>' +
+      motionPane() +
       '<div class="sg-h">DZWONEK DO DRZWI</div><div class="sg"><div class="sr"><span>Kamera na cały ekran</span><span class="sv"><button class="tgl' + (c.bell ? ' on' : '') + '" data-sact="amb-bell"><i></i></button></span></div>' +
       row('<a>Wypróbuj teraz</a>', '›', 'amb-test', '1') + '</div><div class="sg-f">Gdy ktoś zadzwoni, Panel pokaże obraz z kamery dzwonka i zagra dźwięk. Okno samo się zamyka po minucie.</div>' +
       '<div class="sg">' + row('<a>Pokaż samouczek</a>', '›', 'amb-tour', '1') + '</div>';
@@ -196,6 +225,7 @@
     else if (k === 'amb-to') setCfg('to', +v);
     else if (k === 'amb-saver') setCfg('saver', +v);
     else if (k === 'amb-bell') setCfg('bell', !c.bell);
+    else if (k === 'amb-motion') setCfg('motionOn', !c.motionOn);
     else if (k === 'amb-test') { $('set').classList.add('hidden'); P.testBell(); return false; }
     else if (k === 'amb-tour') { $('set').classList.add('hidden'); P.tour(); return false; }
     return true;

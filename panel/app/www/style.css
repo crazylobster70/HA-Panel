@@ -294,7 +294,9 @@ select.inp option{color:#000}
 /* 0.4.2+rehome: szklo jak w Rehome - tlo widac ostro (bez rozmycia), lekko przyciemnione, cienka jasna krawedz */
 .tile:where(:not(.t-camera,.t-map,.t-analog_clock,.t-devices)),.dev{
   background:linear-gradient(180deg,rgba(90,30,0,.08) 0%,rgba(90,30,0,.16) 100%);
-  backdrop-filter:none;-webkit-backdrop-filter:none;
+  /* 0.9.39: suwak szklaności – --gtd przyciemnienie, --gtw mleczna biel, --gtb rozmycie */
+  background:linear-gradient(180deg,rgba(255,255,255,var(--gtw,0)) 0%,rgba(255,255,255,calc(var(--gtw,0) * .7)) 100%),linear-gradient(180deg,rgba(90,30,0,calc(.08 * var(--gtd,1))) 0%,rgba(90,30,0,calc(.16 * var(--gtd,1))) 100%);
+  backdrop-filter:blur(var(--gtb,0px));-webkit-backdrop-filter:blur(var(--gtb,0px));
   border:1px solid rgba(255,255,255,.34);
   box-shadow:inset 0 1px 0 rgba(255,255,255,.30),inset 1px 0 0 rgba(255,255,255,.10),inset -1px 0 0 rgba(255,255,255,.10);
   text-shadow:0 1px 2px rgba(0,0,0,.18);
@@ -1249,3 +1251,29 @@ body.reduce-motion .seg.due .ic{animation:none}
 .t-photo .shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,0) 60%,rgba(0,0,0,.6) 100%);border-radius:inherit}
 .t-photo .lbl{position:absolute;left:18px;right:18px;bottom:14px}
 .ph-full{display:block;width:100%;max-height:72vh;object-fit:contain;border-radius:16px}
+
+/* 0.9.39: paski z alertami */
+.alerts{position:fixed;top:max(10px,env(safe-area-inset-top));left:50%;transform:translateX(-50%);z-index:40;display:flex;flex-direction:column;gap:8px;width:min(720px,calc(100% - 24px));pointer-events:none}
+.alerts.hidden{display:none}
+.al{pointer-events:auto;display:flex;align-items:center;gap:12px;padding:8px 8px 8px 12px;border-radius:999px;background:rgba(28,28,30,.72);border:1px solid rgba(255,255,255,.22);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);box-shadow:0 8px 30px rgba(0,0,0,.25);cursor:pointer}
+.al.al-new{animation:alin .35s ease}
+@keyframes alin{from{opacity:0;transform:translateY(-12px)}to{opacity:1;transform:none}}
+.al-i{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex:none}
+.al-warn .al-i{background:#ff9f0a}.al-info .al-i{background:#0a84ff}.al-ok .al-i{background:#30d158}
+.al-t{flex:1;min-width:0;font-size:17px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.al-more{border:0;border-radius:999px;background:rgba(255,255,255,.18);color:#fff;font:inherit;font-size:14px;font-weight:700;padding:6px 11px;cursor:pointer}
+.al-x{border:0;width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.12);color:#fff;font-size:22px;line-height:1;cursor:pointer;flex:none}
+body.editing .alerts{display:none}
+body.narrow .alerts{left:12px;right:118px;width:auto;transform:none}
+body.narrow .al-t{font-size:15px}
+/* 0.9.39: pasek alertów i kosz do potwierdzenia w stylu zapalonego kafla (jasne tło, ciemny tekst) */
+.al{background:rgba(255,250,242,.95);color:#1c1c1e;border-color:#fff;box-shadow:inset 0 1.5px 0 #fff,0 10px 30px rgba(0,0,0,.18);text-shadow:none}
+.al-more,.al-x{background:rgba(0,0,0,.08);color:#1c1c1e}
+.seg.due{background:rgba(255,250,242,.95);border-color:#fff;color:#1c1c1e;box-shadow:inset 0 1.5px 0 #fff,0 8px 24px rgba(0,0,0,.16);text-shadow:none}
+.seg.due b{color:#1c1c1e}
+.seg.due small{color:#1c1c1e;opacity:.62}
+
+/* 0.9.39: suwak szklaności w ustawieniach */
+.glrow{display:flex;align-items:center;gap:14px;padding:12px 16px}
+.glrow input[type=range]{flex:1;accent-color:#0a84ff;height:28px}
+.glrow small{font-size:13px;opacity:.6;white-space:nowrap}

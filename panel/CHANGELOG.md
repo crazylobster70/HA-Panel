@@ -9,6 +9,17 @@ Each release lists what is new (**Added**), what changed (**Changed**) and what 
 
 ## Polski
 
+### 1.0.7 – 18.11.2026
+**Nowe**
+- **Paski z alertami** na górze ekranu – pokazują się tylko, gdy coś wymaga uwagi: drzwi lub okno otwarte za długo, słaba bateria w czujniku, auto naładowane, alarm uzbrojony na „wyjście”, a ktoś jest w domu. Dotknięcie otwiera szczegóły, × chowa alert do następnej zmiany. Ustawienia → Alerty.
+- **Historia układu** – Panel zapisuje kopię układu przed każdą zmianą (ostatnie 40) i pozwala ją przywrócić. Ustawienia → Historia układu.
+- **Budzenie ruchem** – przełącznik „Budź ruchem przed tabletem”: czujnik ruchu tego tabletu chowa wygaszacz z zegarem. Tablet sam rozpoznaje swój czujnik (aplikacja Kiosk). Ustawienia → Wygaszacz i zegar nocny.
+- **Własne tło** – zdjęcie z telefonu lub komputera jako tapeta twarzy. Ustawienia → Tło.
+- **Szklaność kafli** – suwak od „Przezroczyste” do „Mleczne”. Ustawienia → Tło.
+
+**Zmiany**
+- Kosz czekający na potwierdzenie ma jasne tło jak zapalony kafel (ikona dalej miga).
+
 ### 1.0.6 – 17.11.2026
 **Nowe**
 - Kafel **Zdjęcie**: pole **Własne zdjęcie** – wgrywasz zdjęcie z telefonu lub komputera, wybierasz z folderu www albo zdjęcie z HA. Do tego podpis na dole kafla i dopasowanie („Wypełnij kafel” / „Pokaż całe zdjęcie”). Dotknięcie kafla otwiera zdjęcie w powiększeniu.
@@ -60,6 +71,17 @@ Each release lists what is new (**Added**), what changed (**Changed**) and what 
 ---
 
 ## English
+
+### 1.0.7 – 2026-11-18
+**Added**
+- **Alert banners** at the top of the screen – shown only when something needs attention: a door or window open too long, a low sensor battery, a car fully charged, the alarm armed away while someone is home. Tap for details, × hides the alert until the next change. Settings → Alerts.
+- **Layout history** – Panel saves a copy of the layout before every change (the last 40) and lets you restore it. Settings → Layout history.
+- **Wake on motion** – "Wake on motion in front of the tablet" switch: the tablet's own motion sensor hides the clock screensaver. The tablet finds its own sensor (Kiosk app). Settings → Screensaver and night clock.
+- **Own wallpaper** – a photo from your phone or computer as a face's wallpaper. Settings → Wallpaper.
+- **Tile glass** – a slider from "Clear" to "Frosted". Settings → Wallpaper.
+
+**Changed**
+- A bin waiting for confirmation has a light background like a tile that is on (the icon still blinks).
 
 ### 1.0.6 – 2026-11-17
 **Added**

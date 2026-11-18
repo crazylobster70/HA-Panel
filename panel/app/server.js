@@ -12,6 +12,31 @@ const HA_WS = HA_HTTP.replace(/^http/, 'ws') + (process.env.HA_URL ? '/api/webso
 const WWW = path.join(__dirname, 'www');
 const CONFIG_DIR = process.env.PANEL_CONFIG_DIR || '/config';
 const LAYOUT_FILE = path.join(CONFIG_DIR, 'layout.json');
+// historia układu: kopie layout.json przed każdą zmianą (najwyżej 1 na minutę, ostatnie 40)
+const HIST_DIR = path.join(CONFIG_DIR, 'history');
+let lastSnap = 0;
+function snapshot(reason, force) {
+  try {
+    if (!fs.existsSync(LAYOUT_FILE)) return;
+    if (!force && Date.now() - lastSnap < 60000) return;
+    lastSnap = Date.now();
+    fs.mkdirSync(HIST_DIR, { recursive: true });
+    const id = new Date().toISOString().replace(/[:.]/g, '-');
+    fs.copyFileSync(LAYOUT_FILE, path.join(HIST_DIR, id + (reason ? '__' + reason : '') + '.json'));
+    const files = fs.readdirSync(HIST_DIR).filter((f) => f.endsWith('.json')).sort();
+    files.slice(0, Math.max(0, files.length - 40)).forEach((f) => { try { fs.unlinkSync(path.join(HIST_DIR, f)); } catch (e) { /* */ } });
+  } catch (e) { log('Historia układu:', e.message); }
+}
+function histList() {
+  try {
+    return fs.readdirSync(HIST_DIR).filter((f) => f.endsWith('.json')).sort().reverse().map((f) => {
+      const m = f.replace(/\.json$/, '').split('__'), iso = m[0].replace(/^(\d{4}-\d{2}-\d{2}T\d{2})-(\d{2})-(\d{2})-(\d{3})Z$/, '$1:$2:$3.$4Z');
+      let faces = 0, tiles = 0;
+      try { const l = JSON.parse(fs.readFileSync(path.join(HIST_DIR, f), 'utf8')); (l.views || []).forEach((v) => { if (!v.page) faces++; tiles += (v.tiles || []).length; }); } catch (e) { /* */ }
+      return { id: f, t: iso, reason: m[1] || '', faces, tiles };
+    });
+  } catch (e) { return []; }
+}
 const DEFAULT_LAYOUT = path.join(__dirname, 'default-layout.json');
 
 const log = (...a) => console.log(new Date().toISOString().slice(11, 19), ...a);
@@ -269,8 +294,21 @@ const server = http.createServer(async (req, res) => {
       const l = await body(req);
       if (!l || !Array.isArray(l.views) || !l.views.length) return json(res, 400, { error: 'Układ musi mieć co najmniej jedną twarz' });
       try { if (fs.existsSync(LAYOUT_FILE)) fs.copyFileSync(LAYOUT_FILE, LAYOUT_FILE + '.prev'); } catch (e) { /* kopia nieobowiązkowa */ }
+      snapshot('');
       fs.writeFileSync(LAYOUT_FILE, JSON.stringify(normalize(l), null, 2));
       broadcast('layout', { by: req.headers['x-panel-client'] || '' });
+      return json(res, 200, { ok: true });
+    }
+    if (p === '/api/history' && req.method === 'GET') return json(res, 200, histList());
+    if (p === '/api/history/restore' && req.method === 'POST') {
+      const b = await body(req), id = path.basename(String((b && b.id) || ''));
+      const f = path.join(HIST_DIR, id);
+      if (!id.endsWith('.json') || !fs.existsSync(f)) return json(res, 404, { error: 'Nie ma takiej wersji' });
+      const l = JSON.parse(fs.readFileSync(f, 'utf8'));
+      if (!l || !Array.isArray(l.views) || !l.views.length) return json(res, 400, { error: 'Uszkodzona wersja' });
+      snapshot('przed-przywroceniem', true);
+      fs.writeFileSync(LAYOUT_FILE, JSON.stringify(normalize(l), null, 2));
+      broadcast('layout', { by: 'restore' });
       return json(res, 200, { ok: true });
     }
     // zdalne sterowanie ekranami na czas testów (tylko przez ingress HA, czyli po zalogowaniu)

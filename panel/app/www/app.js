@@ -959,11 +959,22 @@
     if (!o && x && x.page && navStack.length) { var f = layout.views[navStack[0]]; if (f) o = m[bgKey(f)]; }
     return o || (x && x.background) || BG.turkus;
   }
+  // 0.9.39: szklaność kafli 0–100 (50 = jak dotąd); przezroczystość tła kafla i rozmycie
+  function glassVal() { var g = (layout.display || {}).glass; return g == null ? 50 : +g; }
+  function applyGlass(g) {
+    if (g == null) g = glassVal();
+    var r = document.documentElement.style;
+    // 0 = całkiem przezroczyste, 50 = dotychczasowe lekkie przyciemnienie, 100 = mleczne szkło z rozmyciem
+    r.setProperty('--gtd', (g <= 50 ? g / 50 : 1).toFixed(2));
+    r.setProperty('--gtw', (g > 50 ? (g - 50) / 50 * 0.32 : 0).toFixed(3));
+    r.setProperty('--gtb', (g > 50 ? Math.round((g - 50) / 50 * 22) : 0) + 'px');
+  }
   function build() {
     if (vi >= layout.views.length) vi = 0;
     fit();
     var v = V(), g = $('view'), cols = v.columns || 5, narrow = FIT.narrow;
     document.body.style.background = bgOf(v);
+    applyGlass();
     document.body.classList.toggle('appear-light', v.appearance === 'light'); document.body.classList.toggle('appear-dark', v.appearance === 'dark');
     document.body.classList.toggle('onpage', !!v.page);
     $('back').classList.toggle('hidden', !v.page);
@@ -1548,11 +1559,12 @@
   var BGN = { turkus: 'Turkus', pomarancz: 'Pomarańcz', niebo: 'Niebo', fiolet: 'Fiolet', zielen: 'Zieleń', grafit: 'Grafit', noc: 'Noc' };
 
   // ---------- Ustawienia (0.6): dwie kolumny jak w Rehome ----------
-  var VERSION = '1.0.6';
+  var VERSION = '1.0.7';
   var SET = { cat: 'ha', q: '' };
   var SET_CATS = [
     [['ha', 'Home Assistant', '#ff9f0a', 'home']],
     [['faces', 'Twarze', '#5ac8fa', 'clock'], ['bg', 'Tło', '#ff9500', 'photo'], ['grid', 'Siatka kafli', '#30b0c7', 'grid'], ['pages', 'Podstrony', '#5856d6', 'pages'], ['display', 'Ekran', '#007aff', 'sun'], ['ambient', 'Wygaszacz i zegar nocny', '#5e5ce6', 'moon']],
+    [['alerts', 'Alerty', '#ff3b30', 'bell'], ['hist', 'Historia układu', '#8e8e93', 'clock']],
     [['launcher', 'Menu aplikacji', '#af52de', 'apps'], ['lang', 'Język', '#34c759', 'globe']],
     [['about', 'O Panelu', '#3a3a3c', 'info'], ['privacy', 'Prywatność', '#0a84ff', 'lock']]
   ];
@@ -1588,6 +1600,14 @@
       h = '<div class="sg-h">TWARZ</div>' + faceSel() + '<div class="sg-h">TAPETA</div><div class="swatch2">' + Object.keys(BG).map(function (k) {
         return '<button data-sact="bg" data-k="' + k + '" class="' + (bgOf(v) === BG[k] ? 'sel' : '') + '"><i style="background:' + BG[k] + '"></i><span>' + BGN[k] + '</span></button>';
       }).join('') + '</div><div class="sg-f">Tapeta jest osobna dla każdej twarzy. Strony kafli i ekran Dom używają tapety twarzy, z której je otworzysz.</div>' +
+        (function () {
+          var cb = /url\(/.test(bgOf(v));
+          return '<div class="sg-h">WŁASNE TŁO</div>' + sgroup([srow('Własne zdjęcie' + (cb ? '<small>Ustawione na tej twarzy</small>' : ''),
+            '<label class="sbtn">' + (cb ? 'Zmień' : 'Wybierz zdjęcie') + '<input type="file" accept="image/*" data-sin="bgfile" style="display:none"></label>')],
+            'Zdjęcie z telefonu lub komputera jako tapeta tej twarzy. Panel lekko je przyciemnia, żeby napisy na kaflach były czytelne. Żeby wrócić do gotowej tapety, wybierz ją powyżej.');
+        })() +
+        '<div class="sg-h">SZKLANOŚĆ KAFLI</div><div class="sg"><div class="glrow"><small>Przezroczyste</small><input type="range" min="0" max="100" step="5" value="' + glassVal() + '" data-sin="glass"><small>Mleczne</small></div></div>' +
+        '<div class="sg-f">Przesuń w lewo, żeby kafle były bardziej przezroczyste i lepiej było widać tapetę, w prawo – bardziej mleczne i czytelniejsze. Środek to dotychczasowy wygląd. Ustawienie jest wspólne dla wszystkich ekranów.</div>' +
         sgroup([srow('Tylko na tym ekranie', stoggle(!!localBg()[bgKey(v)], 'bglocal'))], 'Włączone: ta twarz ma na tym urządzeniu własną tapetę, a pozostałe ekrany zostają przy wspólnej. Wyłączone: wspólna tapeta dla wszystkich ekranów.');
     } else if (c === 'grid') {
       h = '<div class="sg-h">TWARZ</div>' + faceSel() + '<div class="sg-h">KOLUMNY</div><div class="segs2">' + [3, 4, 5, 6, 7, 8].map(function (n) { return '<button class="' + ((v.columns || 5) === n ? 'sel' : '') + '" data-sact="cols" data-v="' + n + '">' + n + '</button>'; }).join('') + '</div>' +
@@ -1608,6 +1628,10 @@
           'Tryb kiosku chowa pasek boczny Home Assistanta, gdy Panel jest otwarty – Panel zajmuje cały ekran. Po przejściu do innego dashboardu pasek wraca. Automatyczny włącza go na tabletach z Androidem.', 'TRYB KIOSKU NA TYM EKRANIE') +
         sgroup([srow('Ogranicz ruch', stoggle(d.reduceMotion, 'rm'))], 'Kafle nie drżą przy układaniu, a ekrany otwierają się bez animacji.') +
         sgroup([srow('<a>Wygaszacz i zegar nocny</a>', '›', ' data-scat="ambient"', 'link')]);
+    } else if (c === 'alerts') {
+      h = PANEL.alertPane ? PANEL.alertPane() : '';
+    } else if (c === 'hist') {
+      h = PANEL.histPane ? PANEL.histPane() : '';
     } else if (c === 'ambient') {
       h = PANEL.ambPane ? PANEL.ambPane() : '';
     } else if (c === 'lang') {
@@ -1707,6 +1731,8 @@
       else if (k === 'kiosk') { try { localStorage.setItem('panel.kiosk', a.getAttribute('data-k')); } catch (e) { /* */ } applyKiosk(); R(); }
       else if (k === 'colors') { try { localStorage.setItem('panel.colors', a.getAttribute('data-k')); } catch (e) { /* */ } applyColors(); R(); }
       else if (k.indexOf('amb-') === 0) { if (PANEL.ambAct && PANEL.ambAct(a)) R(); }
+      else if (k.indexOf('al-') === 0) { if (PANEL.alertAct && PANEL.alertAct(a)) R(); }
+      else if (k.indexOf('hi-') === 0) { if (PANEL.histAct && PANEL.histAct(a)) R(); }
       else if (k === 'gal') { closeSettings(); if (PANEL.openGallery) PANEL.openGallery(); }
       else if (k === 'lang') { if (window.I18N) I18N.set(a.getAttribute('data-k')); }
       else if (k === 'rm') { change(function () { layout.display = Object.assign({}, layout.display, { reduceMotion: !(layout.display && layout.display.reduceMotion) }); }, false); applyDisplay(); R(); }
@@ -1720,6 +1746,18 @@
     var onIn = function (ev) {
       var t = ev.target, k = t.getAttribute('data-sin'); if (!k) return;
       if (k === 'q') { if (ev.type !== 'input') return; SET.q = t.value; var pos = t.selectionStart; renderSettings(true); var n = $('set').querySelector('.ssearch'); if (n) { n.focus(); try { n.setSelectionRange(pos, pos); } catch (x) { /* */ } } }
+      else if (k === 'glass') { var gv = +t.value; applyGlass(gv); if (ev.type === 'change') change(function () { layout.display = layout.display || {}; layout.display.glass = gv; }, false); }
+      else if (k === 'bgfile' && ev.type === 'change' && t.files && t.files[0]) {
+        toast('Wysyłam zdjęcie…');
+        shrink(t.files[0], 1920).then(function (blob) {
+          return fetch('api/upload?name=tlo', { method: 'POST', headers: { 'Content-Type': blob.type }, body: blob }).then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(j.error); return j; }); });
+        }).then(function (j) {
+          var nb = 'linear-gradient(rgba(0,0,0,.22),rgba(0,0,0,.22)), url(\'' + imgSrc(j.path) + '\') center / cover no-repeat, #1f2f2c';
+          var vv = V() && !V().page ? V() : layout.views[faces()[0]], lm = localBg(), bk = bgKey(vv);
+          if (lm[bk]) { lm[bk] = nb; saveLocalBg(lm); build(); } else change(function () { vv.background = nb; });
+          renderSettings(true); toast('Tło zapisane');
+        }).catch(function (e) { toast('Nie udało się: ' + e.message); });
+      }
       else if (k === 'vname' && ev.type === 'change') { var i = +t.getAttribute('data-i'); change(function () { layout.views[i].title = t.value; }, false); }
     };
     el.addEventListener('input', onIn); el.addEventListener('change', onIn);
@@ -1807,7 +1845,7 @@
     TR: TR, DC_TR: DC_TR, T: T, DAYS: DAYS, MON: MON, MSH: MSH,
     layout: function () { return layout; }, openPage: openPage, hasPage: function (id) { return (layout.views || []).some(function (v) { return v.id === id && v.page; }); },
     editing: function () { return edit; }, popupOpen: function () { return !!popup; },
-    settings: settings, change: change, VERSION: VERSION, faces: faces, setFace: function (i) { vi = i; navStack = []; edit = false; build(); },
+    settings: settings, refreshSettings: function () { if (!$('set').classList.contains('hidden')) renderSettings(true); }, change: change, VERSION: VERSION, faces: faces, setFace: function (i) { vi = i; navStack = []; edit = false; build(); },
     BG: BG, BGN: BGN, SCHEMA: SCHEMA, place: place, build: build, renderStatic: renderStatic, uid: uid, vi: function () { return vi; },
     enterEdit: enterEdit, exitEdit: exitEdit, tileMenu: tileMenu, typePicker: typePicker, addTile: addTile, undo: undo, refreshPop: refreshPop,
     save: function () { save(); }, setLayout: function (l) { layout = normalize(l); save(); }, fitInfo: function () { return FIT; }, select: select, SIZES: SIZES,
