@@ -9,6 +9,10 @@ Each release lists what is new (**Added**), what changed (**Changed**) and what 
 
 ## Polski
 
+### 1.0.11 – 18.11.2026
+**Poprawki**
+- Baterie: lista pokazuje znowu wszystkie czujniki i tablety (baterie oznaczone w HA jako „diagnostyczne” były pomijane) i nie pokazuje baterii auta.
+
 ### 1.0.10 – 18.11.2026
 **Nowe**
 - Strona **Baterie**: przycisk **Edytuj** – zmiana nazwy urządzenia, ukrywanie (ukryte nie liczą się na kafelku ani w alertach) i wybór progu wymiany baterii (10–30%).
@@ -97,6 +101,10 @@ Each release lists what is new (**Added**), what changed (**Changed**) and what 
 ---
 
 ## English
+
+### 1.0.11 – 2026-11-18
+**Fixed**
+- Batteries: the list shows all sensors and tablets again (batteries marked as “diagnostic” in HA were skipped) and no longer shows the car battery.
 
 ### 1.0.10 – 2026-11-18
 **Added**

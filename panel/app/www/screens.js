@@ -377,7 +377,7 @@
     ids.forEach(function (e) { var d = bdev[e]; if (d && e.indexOf('device_tracker.') === 0 && attr(e, 'source_type') === 'gps' && !mobileDev[d] && !kioskModel[d]) carDev[d] = 1; });
     (P.layout().views || []).forEach(function (v) { (v.tiles || []).forEach(function (t) { if (/^car/.test(t.type || '')) [t.battery, t.range, t.charging, t.plug].forEach(function (e) { if (e && bdev[e]) carDev[bdev[e]] = 1; }); }); });
     ids.forEach(function (e) {
-      if (e.indexOf('sensor.') !== 0 || attr(e, 'device_class') !== 'battery' || isNaN(parseFloat(stv(e))) || REG.skip[e]) return;
+      if (e.indexOf('sensor.') !== 0 || attr(e, 'device_class') !== 'battery' || isNaN(parseFloat(stv(e)))) return;
       var d = bdev[e] || e; if (carDev[d]) return;
       var cur = byDev[d];
       if (!cur) { byDev[d] = e; order.push(d); }

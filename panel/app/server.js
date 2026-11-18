@@ -121,7 +121,7 @@ async function loadRegistry() {
       if (e.ec != null || e.hb) skip[e.ei] = 1;
       if (e.di && /^camera\./.test(e.ei)) dev[e.ei] = e.di;
       // urządzenia z baterią (ekran Baterie): encja → urządzenie, żeby pokazać jedno urządzenie raz
-      if (e.di && /^(sensor|binary_sensor|device_tracker)\./.test(e.ei) && (/^device_tracker\./.test(e.ei) || /batter|bateri|charg|naladowa|_device$|state_of_charge|soc$/.test(e.ei))) { bdev[e.ei] = e.di; if (devInfo[e.di]) bdevs[e.di] = devInfo[e.di]; }
+      if (e.di && /^(sensor|binary_sensor|device_tracker)\./.test(e.ei) && (/^device_tracker\./.test(e.ei) || /batter|bateri|charg|ladowa|akumul|_device$|state_of_charge|soc$|_level$/.test(e.ei))) { bdev[e.ei] = e.di; if (devInfo[e.di]) bdevs[e.di] = devInfo[e.di]; }
     });
     reg = { name: (cfg && cfg.location_name) || '', areas: (areas || []).map(a => ({ id: a.area_id, name: a.name, icon: a.icon || '' })), ent, skip, dev, bdev, bdevs };
     log('Rejestr: pomieszczenia', reg.areas.length, 'encje z pomieszczeniem', Object.keys(ent).length);
