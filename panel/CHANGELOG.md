@@ -9,6 +9,13 @@ Each release lists what is new (**Added**), what changed (**Changed**) and what 
 
 ## Polski
 
+### 1.0.9 – 18.11.2026
+**Nowe**
+- Kafel **Pogoda – prognoza** (jak w Rehome, przezroczyste szkło): temperatura teraz, opis, maks./min., prognoza godzinowa i na kolejne dni z kolorowymi paskami. Sam dopasowuje się do rozmiaru – na szerokim, niskim kafelku układa się w dwie kolumny i zawsze pokazuje tylko to, co mieści się w całości.
+
+**Poprawki**
+- Telefon: tapeta jest na całym przewijanym ekranie (wcześniej niżej robiło się czarne tło albo tapeta się powtarzała).
+
 ### 1.0.8 – 18.11.2026
 **Nowe**
 - Ustawienia → **Zdjęcia**: album Panelu w mediach Home Assistanta (folder Panel – widać go też w przeglądarce mediów HA). Dodawanie zdjęć z tego urządzenia, z telefonu (kod QR – telefon od razu wysyła zdjęcia) i z folderu www Home Assistanta. Miniatury z usuwaniem i wybór, co pokazuje twarz Zdjęcia (zdjęcia Panelu, folder www albo wszystkie).
@@ -79,6 +86,13 @@ Each release lists what is new (**Added**), what changed (**Changed**) and what 
 ---
 
 ## English
+
+### 1.0.9 – 2026-11-18
+**Added**
+- **Weather – forecast** tile (like Rehome, clear glass): current temperature, condition, high/low, hourly forecast and the next days with colour bars. It adapts to its size – on a wide, short tile it switches to two columns and only shows what fits completely.
+
+**Fixed**
+- Phone: the wallpaper now covers the whole scrolling screen (before, the lower part turned black or the wallpaper repeated).
 
 ### 1.0.8 – 2026-11-18
 **Added**

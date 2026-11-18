@@ -125,4 +125,68 @@
     var m0 = P.FK.weather.mount;
     P.FK.weather.mount = function (el, v) { var off = m0(el, v); el.addEventListener('click', function () { P.openWeather((v.opts && v.opts.weather) || null); }); return off; };
   }
+
+  // ---------- kafel „Pogoda – prognoza” (jak w Rehome, bez nazwy domu) ----------
+  function firstW() { return P.ids().filter(function (e) { return e.indexOf('weather.') === 0; })[0]; }
+  P.T.weather_fc = {
+    deps: function (c) { return [c.weather || firstW(), 'sun.sun']; },
+    render: function (c, t) {
+      var e = c.weather || firstW(), s = st(e), cond = s ? s.state : '', now = new Date(), a = (s && s.attributes) || {};
+      var d = (t && t.d) || [], h = (t && t.h) || [], hi = d[0] && d[0].temperature, lo = d[0] && d[0].templow;
+      var rows = Math.max(1, Math.min(7, c.days || 7));
+      var hours = h.filter(function (x) { return new Date(x.datetime).getTime() > now.getTime() - 3600000; }).slice(0, c.hours || 5);
+      var top = '<div class="wf-top"><div class="wf-t">' + (a.temperature != null ? Math.round(a.temperature) + '°' : '–') + '</div>' +
+        '<div class="wf-r">' + ic(cond, isNight(now)) + '<b>' + esc(COND[cond] || cond || '') + '</b>' +
+        (hi != null ? '<span>' + (EN ? 'H' : 'Maks.') + ':' + Math.round(hi) + '° ' + (EN ? 'L' : 'Min.') + ':' + Math.round(lo) + '°</span>' : '') + '</div></div>';
+      var hr = hours.length ? '<div class="wf-h">' + hours.map(function (x, i) {
+        var dt = new Date(x.datetime);
+        return '<div><small>' + (i === 0 ? (EN ? 'Now' : 'Teraz') : pad(dt.getHours()) + ':00') + '</small>' + ic(x.condition, isNight(dt)) + '<b>' + Math.round(x.temperature) + '°</b></div>';
+      }).join('') + '</div>' : '';
+      var days = d.slice(0, rows), mn = Math.min.apply(null, days.map(function (x) { return x.templow != null ? x.templow : x.temperature; })), mx = Math.max.apply(null, days.map(function (x) { return x.temperature; }));
+      var span = Math.max(1, mx - mn);
+      var dr = days.length ? '<div class="wf-d">' + days.map(function (x, i) {
+        var dt = new Date(x.datetime), l = x.templow != null ? x.templow : x.temperature, hh = x.temperature;
+        var x1 = Math.round((l - mn) / span * 100), x2 = Math.round((hh - mn) / span * 100);
+        return '<div class="wf-row"><b>' + (i === 0 ? (EN ? 'Today' : 'Dziś') : esc(P.DSH ? P.DSH[dt.getDay()] : '')) + '</b>' + ic(x.condition, false) +
+          '<span class="wf-lo">' + Math.round(l) + '°</span><span class="wf-bar"><i style="left:' + x1 + '%;right:' + (100 - x2) + '%;background:linear-gradient(90deg,' + tempCol(l) + ',' + tempCol(hh) + ')"></i></span><span class="wf-hi">' + Math.round(hh) + '°</span></div>';
+      }).join('') + '</div>' : '';
+      return top + hr + dr;
+    },
+    init: function (c, t) {
+      var load = function () {
+        var e = c.weather || firstW();
+        if (!e) { setTimeout(load, 2000); return; } // stany HA jeszcze się nie wczytały
+        t.loaded = true;
+        P.api('forecast?type=hourly&entity=' + encodeURIComponent(e)).then(function (x) { t.h = x || []; P.mark(t); }).catch(function () { });
+        P.api('forecast?type=daily&entity=' + encodeURIComponent(e)).then(function (x) { t.d = x || []; P.mark(t); }).catch(function () { });
+      };
+      load(); t.timer = setInterval(load, 15 * 60000);
+    },
+    // po narysowaniu: zostaw tylko tyle dni (i godzin), ile się całych zmieści – nic nie może być ucięte
+    after: function (c, t) {
+      var el = t.el; if (!el) return;
+      // szeroki i niski kafel: dwie kolumny – po lewej teraz i godziny, po prawej kolejne dni
+      var r0 = el.getBoundingClientRect();
+      el.classList.toggle('wf-wide', r0.width / Math.max(1, r0.height) > 1.9);
+      var fit = function () {
+        var box = el.getBoundingClientRect(), bottom = box.bottom - 6;
+        // za wąsko na pełne wiersze dni: najpierw bez ikon, potem bez pasków
+        el.classList.remove('wf-noic', 'wf-nobar');
+        var over = function () { var o = false; el.querySelectorAll('.wf-row,.wf-h').forEach(function (x) { if (x.getBoundingClientRect().right > box.right - 4 || x.scrollWidth > x.clientWidth + 1) o = true; }); return o; };
+        if (over()) el.classList.add('wf-noic');
+        if (over()) el.classList.add('wf-nobar');
+        var d = el.querySelector('.wf-d'), h = el.querySelector('.wf-h');
+        if (d) {
+          var rows = d.querySelectorAll('.wf-row');
+          for (var i = rows.length - 1; i >= 0; i--) { if (rows[i].getBoundingClientRect().bottom > bottom) rows[i].parentNode.removeChild(rows[i]); }
+          if (!d.querySelector('.wf-row')) { d.parentNode.removeChild(d); if (h) h.classList.add('wf-last'); }
+        }
+        if (h && h.getBoundingClientRect().bottom > bottom) { h.parentNode.removeChild(h); }
+      };
+      fit(); setTimeout(fit, 60);
+    },
+    tap: function (c) { if (P.openWeather) P.openWeather(c.weather || firstW()); }
+  };
+  P.SCHEMA.weather_fc = { label: 'Pogoda – prognoza', desc: 'Temperatura, prognoza godzinowa i na kolejne dni', def: { w: 2, h: 2 },
+    fields: [['weather', 'Pogoda', 'entity', ['weather']], ['hours', 'Ile godzin', 'number'], ['days', 'Ile dni', 'number']] };
 })();
