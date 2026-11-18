@@ -232,6 +232,13 @@ function json(res, code, obj) {
 }
 const IMG_DIR = path.join(CONFIG_DIR, 'img');
 const WWW_DIR = process.env.PANEL_WWW_DIR || '/homeassistant/www'; // folder www HA = adresy /local/…
+// album zdjęć Panelu: w mediach Home Assistanta (folder Panel – widać go w przeglądarce mediów HA), a bez mediów – w konfiguracji Panelu
+const ALBUM_DIR = process.env.PANEL_ALBUM_DIR || (fs.existsSync('/media') ? '/media/Panel' : path.join(CONFIG_DIR, 'photos'));
+const ALBUM_IN_MEDIA = ALBUM_DIR.indexOf('/media') === 0;
+function listAlbum() {
+  try { return fs.readdirSync(ALBUM_DIR).filter((n) => /\.(jpe?g|png|webp|gif)$/i.test(n) && n[0] !== '.').map((n) => ({ n, t: fs.statSync(path.join(ALBUM_DIR, n)).mtimeMs })).sort((a, b) => b.t - a.t).map((x) => x.n); } catch (e) { return []; }
+}
+let albumSession = 0, albumMode = 'album'; // do kiedy telefon może dodawać zdjęcia po zeskanowaniu kodu; album albo tło
 const IMG_RE = /\.(jpe?g|png|webp|gif|svg)$/i;
 function listWww() {
   const out = [];
@@ -412,9 +419,42 @@ const server = http.createServer(async (req, res) => {
     }
     if (p === '/api/www') return json(res, 200, listWww());
     if (p === '/api/photos') {
-      let up = []; try { up = fs.readdirSync(IMG_DIR).filter(n => IMG_RE.test(n) && !/^(auto|car)/i.test(n)).map(n => 'api/file/img/' + encodeURIComponent(n)); } catch (e) { /* brak folderu */ }
-      return json(res, 200, up.concat(listWww().map(f => 'api/www/' + f.split('/').map(encodeURIComponent).join('/'))));
+      // źródło zdjęć dla twarzy Zdjęcia i kafla Zdjęcie: panel (album Panelu), www (folder www HA), all (oba)
+      const src = url.searchParams.get('src') || 'all';
+      const alb = listAlbum().map((n) => 'api/album/file/' + encodeURIComponent(n));
+      const www = listWww().map(f => 'api/www/' + f.split('/').map(encodeURIComponent).join('/'));
+      return json(res, 200, src === 'panel' ? alb : src === 'www' ? www : alb.concat(www));
     }
+    if (p === '/api/album' && req.method === 'GET') return json(res, 200, { files: listAlbum(), media: ALBUM_IN_MEDIA, session: albumSession > Date.now(), mode: albumMode });
+    if (p === '/api/album' && req.method === 'POST') {
+      const ext = { 'image/jpeg': '.jpg', 'image/png': '.png', 'image/webp': '.webp' }[(req.headers['content-type'] || '').split(';')[0]];
+      if (!ext) return json(res, 400, { error: 'Dozwolone: JPG, PNG, WEBP' });
+      const buf = await rawBody(req, 12 * 1024 * 1024);
+      fs.mkdirSync(ALBUM_DIR, { recursive: true });
+      const d = new Date(), name = 'panel-' + d.toISOString().slice(0, 10) + '-' + Date.now().toString(36) + ext;
+      fs.writeFileSync(path.join(ALBUM_DIR, name), buf);
+      log('Album: dodano', name, Math.round(buf.length / 1024) + ' KB');
+      broadcast('album', {});
+      return json(res, 200, { name });
+    }
+    if (p === '/api/album/import' && req.method === 'POST') {
+      const b = await body(req), rel = String((b && b.file) || '');
+      const f = path.normalize(path.join(WWW_DIR, rel));
+      if (!f.startsWith(WWW_DIR + path.sep) || !IMG_RE.test(f) || !fs.existsSync(f)) return json(res, 404, { error: 'Nie ma takiego zdjęcia' });
+      fs.mkdirSync(ALBUM_DIR, { recursive: true });
+      const name = 'panel-www-' + Date.now().toString(36) + '-' + path.basename(f).toLowerCase().replace(/[^a-z0-9_.-]+/g, '-');
+      fs.copyFileSync(f, path.join(ALBUM_DIR, name));
+      broadcast('album', {});
+      return json(res, 200, { name });
+    }
+    if (p.startsWith('/api/album/file/')) {
+      const n = path.basename(decodeURIComponent(p.slice(16)));
+      if (req.method === 'DELETE') { try { fs.unlinkSync(path.join(ALBUM_DIR, n)); } catch (e) { return json(res, 404, { error: 'Nie ma takiego zdjęcia' }); } broadcast('album', {}); return json(res, 200, { ok: true }); }
+      if (!/\.(jpe?g|png|webp|gif)$/i.test(n) || !fs.existsSync(path.join(ALBUM_DIR, n))) { res.writeHead(404); return res.end(); }
+      return sendFile(res, path.join(ALBUM_DIR, n), 86400);
+    }
+    if (p === '/api/album/session' && req.method === 'POST') { const sb = await body(req).catch(() => null); albumMode = sb && sb.mode === 'bg' ? 'bg' : 'album'; albumSession = Date.now() + 10 * 60000; broadcast('album', { session: true }); return json(res, 200, { until: albumSession }); }
+    if (p === '/api/album/session' && req.method === 'DELETE') { albumSession = 0; broadcast('album', {}); return json(res, 200, { ok: true }); }
     if (p === '/api/calendar') {
       const ids = (url.searchParams.get('ids') || '').split(',').filter(x => /^calendar\.[a-z0-9_]+$/.test(x)).slice(0, 20);
       const days = Math.min(62, parseInt(url.searchParams.get('days'), 10) || 31);

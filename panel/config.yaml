@@ -1,5 +1,5 @@
 name: Panel
-version: "1.0.7"
+version: "1.0.8"
 slug: panel
 url: "https://github.com/crazylobster70/ha-panel"
 description: Glass wall-tablet dashboard for Home Assistant (Polish/English), editable by touch
@@ -20,3 +20,5 @@ map:
     read_only: false
   - type: homeassistant_config
     read_only: true
+  - type: media
+    read_only: false

@@ -36,9 +36,10 @@
   var PH = null, PHL = null;
   function photos(cb) {
     if (PH) return cb(PH);
-    if (!PHL) PHL = P.api('photos').then(function (l) { PH = l || []; return PH; }).catch(function () { PH = []; return PH; });
+    if (!PHL) PHL = P.api('photos?src=' + ((((P.layout() || {}).photos) || {}).source || 'all')).then(function (l) { PH = l || []; return PH; }).catch(function () { PH = []; return PH; });
     PHL.then(cb);
   }
+  P.resetPhotos = function () { PH = null; PHL = null; photos(function () { if (P.build) P.build(); }); };
   function photoFor(v, n) {
     var album = (v.opts && v.opts.album) || 'all', cams = cameras().map(function (e) { return 'api/camera/' + e + '?t=' + Math.floor(Date.now() / 30000); });
     var list = album === 'cameras' ? cams : album === 'images' ? (PH || []) : (PH || []).concat(cams);

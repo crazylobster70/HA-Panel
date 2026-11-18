@@ -9,6 +9,14 @@ Each release lists what is new (**Added**), what changed (**Changed**) and what 
 
 ## Polski
 
+### 1.0.8 – 18.11.2026
+**Nowe**
+- Ustawienia → **Zdjęcia**: album Panelu w mediach Home Assistanta (folder Panel – widać go też w przeglądarce mediów HA). Dodawanie zdjęć z tego urządzenia, z telefonu (kod QR – telefon od razu wysyła zdjęcia) i z folderu www Home Assistanta. Miniatury z usuwaniem i wybór, co pokazuje twarz Zdjęcia (zdjęcia Panelu, folder www albo wszystkie).
+- Ustawienia → **Tło**: te same trzy sposoby wyboru własnego tła – z tego urządzenia, z telefonu (kod QR) oraz ze zdjęć Panelu lub folderu www.
+
+**Zmiany**
+- Twarz Zdjęcia nie pokazuje już ikon i obrazków wgranych do kafli – tylko zdjęcia z albumu i folderu www.
+
 ### 1.0.7 – 18.11.2026
 **Nowe**
 - **Paski z alertami** na górze ekranu – pokazują się tylko, gdy coś wymaga uwagi: drzwi lub okno otwarte za długo, słaba bateria w czujniku, auto naładowane, alarm uzbrojony na „wyjście”, a ktoś jest w domu. Dotknięcie otwiera szczegóły, × chowa alert do następnej zmiany. Ustawienia → Alerty.
@@ -71,6 +79,14 @@ Each release lists what is new (**Added**), what changed (**Changed**) and what 
 ---
 
 ## English
+
+### 1.0.8 – 2026-11-18
+**Added**
+- Settings → **Photos**: a Panel album in Home Assistant's media (folder Panel – it shows in HA's Media browser too). Add photos from this device, from your phone (QR code – the phone sends the photos straight away) and from Home Assistant's www folder. Thumbnails with delete, and a choice of what the Photos face shows (Panel photos, the www folder or all).
+- Settings → **Wallpaper**: the same three ways to pick your own wallpaper – from this device, from your phone (QR code) and from Panel photos or the www folder.
+
+**Changed**
+- The Photos face no longer shows icons and images uploaded for tiles – only album photos and the www folder.
 
 ### 1.0.7 – 2026-11-18
 **Added**

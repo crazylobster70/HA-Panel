@@ -954,6 +954,14 @@
   function bgKey(x) { return (x && (x.id || x.title)) || ('i' + layout.views.indexOf(x)); }
   function localBg() { try { return JSON.parse(localStorage.getItem('panel.bg') || '{}') || {}; } catch (e) { return {}; } }
   function saveLocalBg(m) { try { localStorage.setItem('panel.bg', JSON.stringify(m)); } catch (e) { /* */ } }
+  // własne zdjęcie jako tapeta bieżącej twarzy (wspólnie albo tylko na tym ekranie)
+  function setBgImage(src) {
+    var nb = 'linear-gradient(rgba(0,0,0,.22),rgba(0,0,0,.22)), url(\'' + src + '\') center / cover no-repeat, #1f2f2c';
+    var vv = V() && !V().page ? V() : layout.views[faces()[0]], lm = localBg(), bk = bgKey(vv);
+    if (lm[bk]) { lm[bk] = nb; saveLocalBg(lm); build(); } else change(function () { vv.background = nb; });
+    if (!$('set').classList.contains('hidden')) renderSettings(true);
+    toast('Tło zapisane');
+  }
   function bgOf(x) {
     var m = localBg(), o = m[bgKey(x)];
     if (!o && x && x.page && navStack.length) { var f = layout.views[navStack[0]]; if (f) o = m[bgKey(f)]; }
@@ -1559,11 +1567,11 @@
   var BGN = { turkus: 'Turkus', pomarancz: 'Pomarańcz', niebo: 'Niebo', fiolet: 'Fiolet', zielen: 'Zieleń', grafit: 'Grafit', noc: 'Noc' };
 
   // ---------- Ustawienia (0.6): dwie kolumny jak w Rehome ----------
-  var VERSION = '1.0.7';
+  var VERSION = '1.0.8';
   var SET = { cat: 'ha', q: '' };
   var SET_CATS = [
     [['ha', 'Home Assistant', '#ff9f0a', 'home']],
-    [['faces', 'Twarze', '#5ac8fa', 'clock'], ['bg', 'Tło', '#ff9500', 'photo'], ['grid', 'Siatka kafli', '#30b0c7', 'grid'], ['pages', 'Podstrony', '#5856d6', 'pages'], ['display', 'Ekran', '#007aff', 'sun'], ['ambient', 'Wygaszacz i zegar nocny', '#5e5ce6', 'moon']],
+    [['faces', 'Twarze', '#5ac8fa', 'clock'], ['bg', 'Tło', '#ff9500', 'photo'], ['photos', 'Zdjęcia', '#ff2d55', 'photo'], ['grid', 'Siatka kafli', '#30b0c7', 'grid'], ['pages', 'Podstrony', '#5856d6', 'pages'], ['display', 'Ekran', '#007aff', 'sun'], ['ambient', 'Wygaszacz i zegar nocny', '#5e5ce6', 'moon']],
     [['alerts', 'Alerty', '#ff3b30', 'bell'], ['hist', 'Historia układu', '#8e8e93', 'clock']],
     [['launcher', 'Menu aplikacji', '#af52de', 'apps'], ['lang', 'Język', '#34c759', 'globe']],
     [['about', 'O Panelu', '#3a3a3c', 'info'], ['privacy', 'Prywatność', '#0a84ff', 'lock']]
@@ -1602,9 +1610,8 @@
       }).join('') + '</div><div class="sg-f">Tapeta jest osobna dla każdej twarzy. Strony kafli i ekran Dom używają tapety twarzy, z której je otworzysz.</div>' +
         (function () {
           var cb = /url\(/.test(bgOf(v));
-          return '<div class="sg-h">WŁASNE TŁO</div>' + sgroup([srow('Własne zdjęcie' + (cb ? '<small>Ustawione na tej twarzy</small>' : ''),
-            '<label class="sbtn">' + (cb ? 'Zmień' : 'Wybierz zdjęcie') + '<input type="file" accept="image/*" data-sin="bgfile" style="display:none"></label>')],
-            'Zdjęcie z telefonu lub komputera jako tapeta tej twarzy. Panel lekko je przyciemnia, żeby napisy na kaflach były czytelne. Żeby wrócić do gotowej tapety, wybierz ją powyżej.');
+          return '<div class="sg-h">WŁASNE TŁO' + (cb ? ' · USTAWIONE NA TEJ TWARZY' : '') + '</div>' + (PANEL.bgSources ? PANEL.bgSources() : '') +
+            '<div class="sg-f">Zdjęcie jako tapeta tej twarzy. Panel lekko je przyciemnia, żeby napisy na kaflach były czytelne. Żeby wrócić do gotowej tapety, wybierz ją powyżej.</div>';
         })() +
         '<div class="sg-h">SZKLANOŚĆ KAFLI</div><div class="sg"><div class="glrow"><small>Przezroczyste</small><input type="range" min="0" max="100" step="5" value="' + glassVal() + '" data-sin="glass"><small>Mleczne</small></div></div>' +
         '<div class="sg-f">Przesuń w lewo, żeby kafle były bardziej przezroczyste i lepiej było widać tapetę, w prawo – bardziej mleczne i czytelniejsze. Środek to dotychczasowy wygląd. Ustawienie jest wspólne dla wszystkich ekranów.</div>' +
@@ -1628,6 +1635,8 @@
           'Tryb kiosku chowa pasek boczny Home Assistanta, gdy Panel jest otwarty – Panel zajmuje cały ekran. Po przejściu do innego dashboardu pasek wraca. Automatyczny włącza go na tabletach z Androidem.', 'TRYB KIOSKU NA TYM EKRANIE') +
         sgroup([srow('Ogranicz ruch', stoggle(d.reduceMotion, 'rm'))], 'Kafle nie drżą przy układaniu, a ekrany otwierają się bez animacji.') +
         sgroup([srow('<a>Wygaszacz i zegar nocny</a>', '›', ' data-scat="ambient"', 'link')]);
+    } else if (c === 'photos') {
+      h = PANEL.photosPane ? PANEL.photosPane() : '';
     } else if (c === 'alerts') {
       h = PANEL.alertPane ? PANEL.alertPane() : '';
     } else if (c === 'hist') {
@@ -1732,6 +1741,7 @@
       else if (k === 'colors') { try { localStorage.setItem('panel.colors', a.getAttribute('data-k')); } catch (e) { /* */ } applyColors(); R(); }
       else if (k.indexOf('amb-') === 0) { if (PANEL.ambAct && PANEL.ambAct(a)) R(); }
       else if (k.indexOf('al-') === 0) { if (PANEL.alertAct && PANEL.alertAct(a)) R(); }
+      else if (k.indexOf('ph-') === 0) { if (PANEL.photosAct && PANEL.photosAct(a)) R(); }
       else if (k.indexOf('hi-') === 0) { if (PANEL.histAct && PANEL.histAct(a)) R(); }
       else if (k === 'gal') { closeSettings(); if (PANEL.openGallery) PANEL.openGallery(); }
       else if (k === 'lang') { if (window.I18N) I18N.set(a.getAttribute('data-k')); }
@@ -1746,17 +1756,13 @@
     var onIn = function (ev) {
       var t = ev.target, k = t.getAttribute('data-sin'); if (!k) return;
       if (k === 'q') { if (ev.type !== 'input') return; SET.q = t.value; var pos = t.selectionStart; renderSettings(true); var n = $('set').querySelector('.ssearch'); if (n) { n.focus(); try { n.setSelectionRange(pos, pos); } catch (x) { /* */ } } }
+      else if (k === 'alfile' && ev.type === 'change' && t.files && t.files.length) { if (PANEL.photosFile) PANEL.photosFile(t); }
       else if (k === 'glass') { var gv = +t.value; applyGlass(gv); if (ev.type === 'change') change(function () { layout.display = layout.display || {}; layout.display.glass = gv; }, false); }
       else if (k === 'bgfile' && ev.type === 'change' && t.files && t.files[0]) {
         toast('Wysyłam zdjęcie…');
         shrink(t.files[0], 1920).then(function (blob) {
           return fetch('api/upload?name=tlo', { method: 'POST', headers: { 'Content-Type': blob.type }, body: blob }).then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(j.error); return j; }); });
-        }).then(function (j) {
-          var nb = 'linear-gradient(rgba(0,0,0,.22),rgba(0,0,0,.22)), url(\'' + imgSrc(j.path) + '\') center / cover no-repeat, #1f2f2c';
-          var vv = V() && !V().page ? V() : layout.views[faces()[0]], lm = localBg(), bk = bgKey(vv);
-          if (lm[bk]) { lm[bk] = nb; saveLocalBg(lm); build(); } else change(function () { vv.background = nb; });
-          renderSettings(true); toast('Tło zapisane');
-        }).catch(function (e) { toast('Nie udało się: ' + e.message); });
+        }).then(function (j) { setBgImage(imgSrc(j.path)); }).catch(function (e) { toast('Nie udało się: ' + e.message); });
       }
       else if (k === 'vname' && ev.type === 'change') { var i = +t.getAttribute('data-i'); change(function () { layout.views[i].title = t.value; }, false); }
     };
@@ -1841,7 +1847,7 @@
   // ---------- interfejs dla ekranów (screens.js) ----------
   window.PANEL = {
     st: st, stv: stv, num: num, attr: attr, bad: bad, esc: esc, pl: pl, plural: plural, ids: function () { return Object.keys(S); },
-    call: call, control: control, toast: toast, openPop: openPop, closePop: closePop, moreInfo: moreInfo, api: api, imgSrc: imgSrc,
+    shrink: shrink, setBgImage: setBgImage, call: call, control: control, toast: toast, openPop: openPop, closePop: closePop, moreInfo: moreInfo, api: api, imgSrc: imgSrc,
     TR: TR, DC_TR: DC_TR, T: T, DAYS: DAYS, MON: MON, MSH: MSH,
     layout: function () { return layout; }, openPage: openPage, hasPage: function (id) { return (layout.views || []).some(function (v) { return v.id === id && v.page; }); },
     editing: function () { return edit; }, popupOpen: function () { return !!popup; },
