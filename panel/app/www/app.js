@@ -276,9 +276,13 @@
     render: function (c) {
       var TH = c.threshold || 10;
       var nm = function (e) { return (attr(e, 'friendly_name') || e).replace(/\s*(Bateria|Battery|Battery level|Poziom baterii)$/i, '').trim(); };
-      var allb = Object.keys(S).filter(function (e) { return e.indexOf('sensor.') === 0 && attr(e, 'device_class') === 'battery' && !isNaN(parseFloat(S[e].state)) && !mobileBat(e); })
-        .map(function (e) { return { n: nm(e), v: parseFloat(S[e].state) }; }).sort(function (a, b) { return a.v - b.v; });
-      var lowb = Object.keys(S).filter(function (e) { return e.indexOf('binary_sensor.') === 0 && attr(e, 'device_class') === 'battery' && S[e].state === 'on'; }).map(function (e) { return { n: nm(e), v: null }; });
+      var allb, lowb;
+      var WP = window.PANEL; if (WP && WP.batteries) { var bb = WP.batteries(); TH = bb.th; allb = bb.all; lowb = bb.lowb.map(function (e) { return { n: nm(e), v: null }; }); }
+      else {
+        allb = Object.keys(S).filter(function (e) { return e.indexOf('sensor.') === 0 && attr(e, 'device_class') === 'battery' && !isNaN(parseFloat(S[e].state)) && !mobileBat(e); })
+          .map(function (e) { return { n: nm(e), v: parseFloat(S[e].state) }; }).sort(function (a, b) { return a.v - b.v; });
+        lowb = Object.keys(S).filter(function (e) { return e.indexOf('binary_sensor.') === 0 && attr(e, 'device_class') === 'battery' && S[e].state === 'on'; }).map(function (e) { return { n: nm(e), v: null }; });
+      }
       var low = allb.filter(function (x) { return x.v <= TH; }).concat(lowb), n = low.length, min = allb[0];
       var col = n ? '#ff453a' : (min && min.v <= 25 ? '#ff9f0a' : '#30d158');
       var title = n ? (n === 1 ? 'Słaba bateria' : 'Słabe baterie: ' + n) : 'Baterie OK';
@@ -289,6 +293,7 @@
         '<div><div class="big">' + esc(title) + '</div><div class="small">' + esc(sub) + '</div></div>';
     },
     tap: function () {
+      if (window.PANEL && window.PANEL.openScreen) return window.PANEL.openScreen('batteries');
       var l = T.batteries._list || [];
       openPop(function () {
         return '<h2>Baterie<button class="x" data-close>×</button></h2>' + l.map(function (x) {
@@ -1567,7 +1572,7 @@
   var BGN = { turkus: 'Turkus', pomarancz: 'Pomarańcz', niebo: 'Niebo', fiolet: 'Fiolet', zielen: 'Zieleń', grafit: 'Grafit', noc: 'Noc' };
 
   // ---------- Ustawienia (0.6): dwie kolumny jak w Rehome ----------
-  var VERSION = '1.0.9';
+  var VERSION = '1.0.10';
   var SET = { cat: 'ha', q: '' };
   var SET_CATS = [
     [['ha', 'Home Assistant', '#ff9f0a', 'home']],

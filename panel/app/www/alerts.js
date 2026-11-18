@@ -31,12 +31,14 @@
         go: function () { P.openScreen && P.openScreen('contacts'); } });
     }
     if (c.battery) {
-      var low = ids.filter(function (e) {
+      var low;
+      if (P.batteries) { var bb = P.batteries(); low = bb.all.concat(bb.mobile.filter(function (x) { return !x.ch; })).filter(function (x) { return x.v < c.batLow; }); }
+      else low = ids.filter(function (e) {
         if (e.indexOf('sensor.') !== 0 || attr(e, 'device_class') !== 'battery' || attr(e, 'unit_of_measurement') !== '%') return false;
         var v = parseFloat(stv(e)); return !isNaN(v) && v < c.batLow;
-      });
-      if (low.length) out.push({ key: 'battery', sig: low.join(','), lvl: 'info', icon: 'battery',
-        text: low.length === 1 ? T('Słaba bateria') + ': ' + name(low[0]) + ' ' + Math.round(parseFloat(stv(low[0]))) + '%' : T('Słaba bateria') + ': ' + low.length + ' ' + T('urządzeń'),
+      }).map(function (e) { return { e: e, n: name(e), v: parseFloat(stv(e)) }; });
+      if (low.length) out.push({ key: 'battery', sig: low.map(function (x) { return x.e; }).join(','), lvl: 'info', icon: 'battery',
+        text: low.length === 1 ? T('Słaba bateria') + ': ' + low[0].n + ' ' + Math.round(low[0].v) + '%' : T('Słaba bateria') + ': ' + low.length + ' ' + T('urządzeń'),
         go: function () { P.openScreen && P.openScreen('batteries'); } });
     }
     if (c.car) {

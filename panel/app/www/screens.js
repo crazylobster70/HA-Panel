@@ -359,27 +359,107 @@
   };
 
   // ---------- Baterie ----------
+  // jedna pozycja na urządzenie; tablety i telefony osobno (ładuje się je, a nie wymienia baterii); auta pomijamy
+  function batCfg() { var l = P.layout(); return (l && l.batteries) || {}; }
+  function batTH() { var c = batCfg(), t = firstTile('batteries'); return c.th || (t && t.threshold) || 10; }
+  var BAT_PREF = /(_battery_level|_battery|_bateria)$/;
+  function batteries(all) {
+    var bdev = REG.bdev || {}, devs = REG.bdevs || {}, cc = batCfg(), names = cc.names || {}, hid = cc.hidden || {};
+    var ids = P.ids(), byDev = {}, order = [], carDev = {}, kioskModel = {}, mobileDev = {};
+    // auta: urządzenia z lokalizatorem GPS albo użyte na kafelkach aut
+    ids.forEach(function (e) {
+      var d = bdev[e]; if (!d) return;
+      if (/_battery_state$/.test(e) || /^binary_sensor\..*_charging$/.test(e) && !/charging_status$/.test(e)) mobileDev[d] = 1;
+      // kiosk na tablecie: sensor.<x>_device (model) obok sensor.<x>_battery
+      var km = /^sensor\.(.+)_device$/.exec(e);
+      if (km && stv(e) && P.st('sensor.' + km[1] + '_battery')) kioskModel[d] = String(stv(e)).toLowerCase();
+    });
+    ids.forEach(function (e) { var d = bdev[e]; if (d && e.indexOf('device_tracker.') === 0 && attr(e, 'source_type') === 'gps' && !mobileDev[d] && !kioskModel[d]) carDev[d] = 1; });
+    (P.layout().views || []).forEach(function (v) { (v.tiles || []).forEach(function (t) { if (/^car/.test(t.type || '')) [t.battery, t.range, t.charging, t.plug].forEach(function (e) { if (e && bdev[e]) carDev[bdev[e]] = 1; }); }); });
+    ids.forEach(function (e) {
+      if (e.indexOf('sensor.') !== 0 || attr(e, 'device_class') !== 'battery' || isNaN(parseFloat(stv(e))) || REG.skip[e]) return;
+      var d = bdev[e] || e; if (carDev[d]) return;
+      var cur = byDev[d];
+      if (!cur) { byDev[d] = e; order.push(d); }
+      else if (!BAT_PREF.test(cur) && BAT_PREF.test(e)) byDev[d] = e;
+    });
+    var mob = function (d, e) { return !!mobileDev[d] || !!kioskModel[d] || (P.mobileBat && P.mobileBat(e)); };
+    var upd = function (e) { var s = P.st(e); return s ? new Date(s.last_updated || s.last_changed || 0).getTime() : 0; };
+    // ten sam tablet bywa w HA dwa razy (aplikacja HA i kiosk) – łączymy po modelu, zostaje świeższy odczyt
+    var drop = {};
+    Object.keys(kioskModel).forEach(function (kd) {
+      if (!byDev[kd]) return;
+      order.forEach(function (d) {
+        if (d === kd || drop[d] || kioskModel[d]) return;
+        var m = (devs[d] && devs[d].m || '').toLowerCase();
+        if (m.length > 3 && kioskModel[kd].indexOf(m) >= 0) { if (upd(byDev[d]) > upd(byDev[kd])) byDev[kd] = byDev[d]; drop[d] = kd; }
+      });
+    });
+    var clean = function (s) { return String(s || '').replace(/\s*(Bateria|Battery level|Battery|Poziom baterii)$/i, '').trim(); };
+    var list = order.filter(function (d) { return !drop[d]; }).map(function (d) {
+      var e = byDev[d], isMob = mob(d, e), def = clean((devs[d] && devs[d].n) || attr(e, 'friendly_name') || e), ch = false;
+      if (isMob) ids.forEach(function (x) {
+        var xd = bdev[x]; if (xd !== d && drop[xd] !== d) return;
+        if (/_battery_state$/.test(x) && /^(charging|full)$/i.test(String(stv(x)))) ch = true;
+        if (/^binary_sensor\..*_charging$/.test(x) && stv(x) === 'on') ch = true;
+      });
+      var a = REG.ent[e] || '', model = devs[d] && devs[d].m || '';
+      return { k: d, e: e, def: def, n: names[d] || def, v: parseFloat(stv(e)), a: areaName(a), mob: isMob, ch: ch, hidden: !!hid[d],
+        tab: isMob && (/tab|ipad|KF|SM-X|SM-T/i.test(def + ' ' + model) || !!kioskModel[d]) };
+    }).filter(function (x) { return all || !x.hidden; }).sort(function (a, b) { return a.v - b.v || a.n.localeCompare(b.n); });
+    var lowb = ids.filter(function (e) { return e.indexOf('binary_sensor.') === 0 && attr(e, 'device_class') === 'battery' && stv(e) === 'on' && !hid[bdev[e] || e]; });
+    return { list: list, lowb: lowb, th: batTH() };
+  }
+  P.batteries = function () { var b = batteries(false), th = b.th; return { all: b.list.filter(function (x) { return !x.mob; }), mobile: b.list.filter(function (x) { return x.mob; }), low: b.list.filter(function (x) { return !x.mob && x.v <= th; }), lowb: b.lowb, th: th }; };
+  var BE = false; // edycja listy baterii
+  var BIC = { tablet: '<rect x="4" y="3" width="16" height="18" rx="2.5"/><path d="M11 18h2"/>', phone: '<rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/>', bolt: '<path d="M13 2 4 14h7l-1 8 9-12h-7z"/>' };
+  function bsvg(n) { return '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + BIC[n] + '</svg>'; }
   SCREENS.batteries = function () {
-    var t = firstTile('batteries'), TH = (t && t.threshold) || 10;
-    var list = P.ids().filter(function (e) { return e.indexOf('sensor.') === 0 && attr(e, 'device_class') === 'battery' && !isNaN(parseFloat(stv(e))) && !(P.mobileBat && P.mobileBat(e)); })
-      .map(function (e) { var n = String(attr(e, 'friendly_name') || e).replace(/\s*(Bateria|Battery|Battery level|Poziom baterii|bateria)$/i, '').trim(); return { e: e, n: n, v: parseFloat(stv(e)), a: areaName(REG.ent[e]) }; })
-      .sort(function (a, b) { return a.v - b.v; });
-    var lowb = P.ids().filter(function (e) { return e.indexOf('binary_sensor.') === 0 && attr(e, 'device_class') === 'battery' && stv(e) === 'on'; });
-    var low = list.filter(function (x) { return x.v <= TH; }), mid = list.filter(function (x) { return x.v > TH && x.v <= 30; }), ok = list.filter(function (x) { return x.v > 30; });
-    var n = low.length + lowb.length, col = n ? '#ff453a' : mid.length ? '#ff9f0a' : '#30d158';
-    var html = hero('battery', col, n ? (n === 1 ? 'Jedna bateria do wymiany' : 'Do wymiany: ' + n) : 'Baterie OK', list.length + ' ' + plural(list.length, 'urządzenie', 'urządzenia', 'urządzeń') + ' na baterii' + (list[0] ? ' · najniższa ' + Math.round(list[0].v) + '%' : ''));
-    var rows = function (l) {
-      return card(l.map(function (x) {
-        use(x.e);
-        var c = x.v <= TH ? '#ff453a' : x.v <= 30 ? '#ff9f0a' : '#30d158';
-        return '<div class="brow" data-dev="' + x.e + '"><div class="bn"><b>' + esc(x.n) + '</b><small>' + esc(x.a || '') + '</small></div><div class="bbar"><i style="width:' + Math.max(3, Math.min(100, x.v)) + '%;background:' + c + '"></i></div><b class="bv" style="color:' + c + '">' + Math.round(x.v) + '%</b></div>';
-      }).join(''), 'list');
+    var b = batteries(BE), TH = b.th, list = b.list;
+    var mob = list.filter(function (x) { return x.mob; }), sens = list.filter(function (x) { return !x.mob; });
+    var vis = sens.filter(function (x) { return !x.hidden; });
+    var low = vis.filter(function (x) { return x.v <= TH; }), n = low.length + b.lowb.length, mid = vis.filter(function (x) { return x.v > TH && x.v <= 30; });
+    var col = n ? '#ff453a' : mid.length ? '#ff9f0a' : '#30d158';
+    var colOf = function (v) { return v <= TH ? '#ff453a' : v <= 30 ? '#ff9f0a' : '#30d158'; };
+    var bar = '<div class="sums camtools">' + (BE ? '<button class="sum" data-bact="reset">Przywróć</button><button class="sum blue" data-bact="done">Gotowe</button>' : '<button class="sum" data-bact="edit">' + svg('pencil') + 'Edytuj</button>') + '</div>';
+    var html = bar + hero('battery', col, n ? (n === 1 ? 'Jedna bateria do wymiany' : 'Do wymiany: ' + n) : 'Baterie OK', vis.length + ' ' + plural(vis.length, 'czujnik', 'czujniki', 'czujników') + ' na baterii' + (vis[0] ? ' · najniższa ' + Math.round(vis[0].v) + '%' : ''));
+    if (BE) html += '<div class="small" style="margin:4px 4px 12px">Zmień nazwę albo ukryj urządzenie. Ukryte nie liczą się na kafelku ani w powiadomieniach.</div>' +
+      section('Próg wymiany baterii', '<div class="bseg">' + [10, 15, 20, 25, 30].map(function (v) { return '<button data-bact="th" data-v="' + v + '" class="' + (v === TH ? 'on' : '') + '">' + v + '%</button>'; }).join('') + '</div>');
+    var ctl = function (x) {
+      return '<div class="bctl"><input class="inp" data-bname="' + esc(x.k) + '" value="' + esc(x.n) + '" placeholder="' + esc(x.def) + '"><button data-bact="hide" data-k="' + esc(x.k) + '" class="' + (x.hidden ? 'on' : '') + '">' + (x.hidden ? 'Pokaż' : 'Ukryj') + '</button></div>';
     };
-    if (low.length || lowb.length) html += section('Do wymiany', (low.length ? rows(low) : '') + (lowb.length ? pills(lowb.map(function (e) { var o = info(e); o.txt = 'Słaba bateria'; o.on = true; o.ac = '#ff453a'; return o; })) : ''));
-    if (mid.length) html += section('Niski poziom', rows(mid));
-    if (ok.length) html += section('W porządku', rows(ok));
+    if (mob.length) html += section('Tablety i telefony', '<div class="bdevs">' + mob.map(function (x) {
+      use(x.e);
+      var c = x.v <= 15 ? '#ff453a' : x.v <= 30 ? '#ff9f0a' : '#30d158';
+      return '<div class="bdev' + (x.hidden ? ' bhid' : '') + '"' + (BE ? '' : ' data-dev="' + x.e + '"') + ' style="--ac:' + c + '">' +
+        '<div class="bdh"><i class="bdi">' + bsvg(x.tab ? 'tablet' : 'phone') + '</i><b class="bdv">' + Math.round(x.v) + '%</b></div>' +
+        (BE ? ctl(x) : '<b class="bdn" translate="no">' + esc(x.n) + '</b><small class="bds">' + (x.ch ? bsvg('bolt') + 'Ładuje się' : 'Na baterii') + (x.a ? ' · ' + esc(x.a) : '') + '</small>') +
+        '<div class="bbar"><i style="width:' + Math.max(3, Math.min(100, x.v)) + '%;background:' + c + '"></i></div></div>';
+    }).join('') + '</div>');
+    var rows = function (l) {
+      return '<div class="gcard list blist' + (BE ? ' bedit' : '') + '">' + l.map(function (x) {
+        use(x.e);
+        var c = colOf(x.v);
+        return '<div class="brow' + (x.hidden ? ' bhid' : '') + '"' + (BE ? '' : ' data-dev="' + x.e + '"') + '>' + (BE ? ctl(x) : '<div class="bn"><b translate="no">' + esc(x.n) + '</b><small>' + (x.a ? esc(x.a) : '&nbsp;') + '</small></div>') +
+          '<div class="bbar"><i style="width:' + Math.max(3, Math.min(100, x.v)) + '%;background:' + c + '"></i></div><b class="bv" style="color:' + c + '">' + Math.round(x.v) + '%</b></div>';
+      }).join('') + '</div>';
+    };
+    var lowL = sens.filter(function (x) { return x.v <= TH; }), restL = sens.filter(function (x) { return x.v > TH; });
+    if (lowL.length || b.lowb.length) html += section('Do wymiany', (lowL.length ? rows(lowL) : '') + (b.lowb.length ? pills(b.lowb.map(function (e) { var o = info(e); o.txt = 'Słaba bateria'; o.on = true; o.ac = '#ff453a'; return o; })) : ''));
+    if (restL.length) html += section('Czujniki i piloty', rows(restL));
+    if (!list.length && !b.lowb.length) html += '<div class="empty2">Brak urządzeń na baterii</div>';
     return { title: 'Baterie', html: html };
   };
+  function batSave(fn) { P.change(function () { var l = P.layout(); l.batteries = l.batteries || {}; fn(l.batteries); }, false); }
+  function batAct(btn) {
+    var k = btn.getAttribute('data-bact'), key = btn.getAttribute('data-k');
+    if (k === 'edit') BE = true;
+    else if (k === 'done') BE = false;
+    else if (k === 'reset') { if (!confirm('Przywrócić domyślne nazwy, widoczność i próg baterii?')) return; P.change(function () { delete P.layout().batteries; }, false); }
+    else if (k === 'hide') batSave(function (c) { c.hidden = c.hidden || {}; if (c.hidden[key]) delete c.hidden[key]; else c.hidden[key] = 1; });
+    else if (k === 'th') batSave(function (c) { c.th = parseInt(btn.getAttribute('data-v'), 10); });
+    render(true); if (P.redraw) P.redraw();
+  }
 
   // ---------- Alarm ----------
   var ALARM = { disarmed: 'Rozbrojony', armed_away: 'Uzbrojony · poza domem', armed_home: 'Uzbrojony · w domu', armed_night: 'Tryb nocny', armed_vacation: 'Wakacje', armed_custom_bypass: 'Uzbrojony', arming: 'Uzbrajanie…', pending: 'Odliczanie…', disarming: 'Rozbrajanie…', triggered: 'ALARM!' };
@@ -582,6 +662,8 @@
       }
       var cb = t.closest('[data-cact]'); if (cb) { if (!cb.disabled) camAct(cb); return; }
       if (t.closest('[data-cname]')) return;
+      var bb = t.closest('[data-bact]'); if (bb) { batAct(bb); return; }
+      if (t.closest('[data-bname]')) return;
       var co = t.closest('[data-cam-open]'); if (co) return openCamera(co.getAttribute('data-cam-open'));
       var dv = t.closest('[data-dev]'); if (dv) return openDevice(dv.getAttribute('data-dev'));
       var a = t.closest('[data-act]'); if (a) return act(a);
@@ -595,6 +677,8 @@
   })();
 
   document.addEventListener('change', function (ev) {
+    var bn = ev.target.closest && ev.target.closest('#scr [data-bname]');
+    if (bn) { var bk = bn.getAttribute('data-bname'), bv = bn.value.trim(); batSave(function (c) { c.names = c.names || {}; if (bv) c.names[bk] = bv; else delete c.names[bk]; }); if (P.redraw) P.redraw(); return; }
     var n = ev.target.closest && ev.target.closest('#scr [data-cname]'); if (!n) return;
     var key = n.getAttribute('data-cname'), v = n.value.trim();
     camSave(function (c) { c.names = c.names || {}; if (v) c.names[key] = v; else delete c.names[key]; });

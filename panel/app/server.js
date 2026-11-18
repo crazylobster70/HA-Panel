@@ -112,16 +112,18 @@ async function loadRegistry() {
       send({ type: 'config/entity_registry/list_for_display' }),
       send({ type: 'get_config' }),
     ]);
-    const devArea = {};
-    (devices || []).forEach(d => { if (d.area_id) devArea[d.id] = d.area_id; });
-    const ent = {}, skip = {}, dev = {};
+    const devArea = {}, devInfo = {};
+    (devices || []).forEach(d => { if (d.area_id) devArea[d.id] = d.area_id; devInfo[d.id] = { n: d.name_by_user || d.name || '', m: d.model || '' }; });
+    const ent = {}, skip = {}, dev = {}, bdev = {}, bdevs = {};
     ((ents && ents.entities) || []).forEach(e => {
       const a = e.ai || (e.di && devArea[e.di]);
       if (a) ent[e.ei] = a;
       if (e.ec != null || e.hb) skip[e.ei] = 1;
       if (e.di && /^camera\./.test(e.ei)) dev[e.ei] = e.di;
+      // urządzenia z baterią (ekran Baterie): encja → urządzenie, żeby pokazać jedno urządzenie raz
+      if (e.di && /^(sensor|binary_sensor|device_tracker)\./.test(e.ei) && (/^device_tracker\./.test(e.ei) || /batter|bateri|charg|naladowa|_device$|state_of_charge|soc$/.test(e.ei))) { bdev[e.ei] = e.di; if (devInfo[e.di]) bdevs[e.di] = devInfo[e.di]; }
     });
-    reg = { name: (cfg && cfg.location_name) || '', areas: (areas || []).map(a => ({ id: a.area_id, name: a.name, icon: a.icon || '' })), ent, skip, dev };
+    reg = { name: (cfg && cfg.location_name) || '', areas: (areas || []).map(a => ({ id: a.area_id, name: a.name, icon: a.icon || '' })), ent, skip, dev, bdev, bdevs };
     log('Rejestr: pomieszczenia', reg.areas.length, 'encje z pomieszczeniem', Object.keys(ent).length);
     broadcast('registry', 1);
   } catch (e) { log('Nie mogę wczytać rejestru:', e.message); }

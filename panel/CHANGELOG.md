@@ -9,6 +9,17 @@ Each release lists what is new (**Added**), what changed (**Changed**) and what 
 
 ## Polski
 
+### 1.0.10 – 18.11.2026
+**Nowe**
+- Strona **Baterie**: przycisk **Edytuj** – zmiana nazwy urządzenia, ukrywanie (ukryte nie liczą się na kafelku ani w alertach) i wybór progu wymiany baterii (10–30%).
+- Sekcja **Tablety i telefony** – procent, „Ładuje się” i pomieszczenie. Ten sam tablet zapisany w HA dwa razy (aplikacja HA i kiosk) pokazuje się raz, ze świeższym odczytem.
+
+**Zmiany**
+- Czujniki i piloty w dwóch równych kolumnach, posortowane od najsłabszej baterii; jedno urządzenie = jedna pozycja (koniec z kilkoma bateriami tego samego auta).
+- Auta nie pojawiają się na liście baterii – mają własne strony.
+- Ładujący się tablet lub telefon nie wywołuje alertu „Słaba bateria”.
+- Dotknięcie kafla Baterie otwiera pełną stronę Baterie.
+
 ### 1.0.9 – 18.11.2026
 **Nowe**
 - Kafel **Pogoda – prognoza** (jak w Rehome, przezroczyste szkło): temperatura teraz, opis, maks./min., prognoza godzinowa i na kolejne dni z kolorowymi paskami. Sam dopasowuje się do rozmiaru – na szerokim, niskim kafelku układa się w dwie kolumny i zawsze pokazuje tylko to, co mieści się w całości.
@@ -86,6 +97,17 @@ Each release lists what is new (**Added**), what changed (**Changed**) and what 
 ---
 
 ## English
+
+### 1.0.10 – 18.11.2026
+**Added**
+- **Batteries** page: **Edit** button – rename a device, hide it (hidden devices don't count on the tile or in alerts) and pick the battery replacement threshold (10–30%).
+- **Tablets & phones** section – percentage, “Charging” and room. A tablet listed twice in HA (HA app and kiosk) is shown once, with the fresher reading.
+
+**Changed**
+- Sensors and remotes in two even columns, sorted from the weakest battery; one device = one entry (no more several batteries for the same car).
+- Cars are left out of the battery list – they have their own pages.
+- A charging tablet or phone no longer triggers the “Low battery” alert.
+- Tapping the Batteries tile opens the full Batteries page.
 
 ### 1.0.9 – 2026-11-18
 **Added**
