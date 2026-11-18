@@ -82,4 +82,4 @@ The layout is stored in `addon_configs/<slug>_panel/layout.json` and shared by a
 
 ---
 
-License: MIT. Bundled font Inter Display: SIL Open Font License 1.1 (`panel/app/www/fonts/OFL.txt`).
+License: MIT. Bundled font Inter Display: SIL Open Font License 1.1 (`panel/app/www/fonts/OFL.txt`). Bundled QR code generator (`panel/app/www/qrcode.js`) © Kazuhiko Arase, MIT License.
