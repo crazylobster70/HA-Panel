@@ -1362,3 +1362,6 @@ body.narrow::before{content:"";position:fixed;inset:0;z-index:-1;background:inhe
 .bseg button.on{background:#0a84ff}
 @media (max-width:820px){.blist{grid-template-columns:1fr}.blist .brow:nth-last-child(2):nth-child(odd){border-bottom:1px solid rgba(255,255,255,.14)}.bdevs{grid-template-columns:1fr 1fr}}
 .blist.bedit{grid-template-columns:1fr}.blist.bedit .brow:nth-last-child(2):nth-child(odd){border-bottom:1px solid rgba(255,255,255,.14)}
+
+/* 1.0.12: wyższe ekrany (iPad) – kafle o proporcjach jak na 16:10, wyśrodkowane w pionie */
+body:not(.narrow) .grid:not(.faceview):not(.scroll){height:var(--gh,var(--vh,100vh));margin-top:var(--gtop,0px)}

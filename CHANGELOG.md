@@ -9,6 +9,10 @@ Each release lists what is new (**Added**), what changed (**Changed**) and what 
 
 ## Polski
 
+### 1.0.12 – 19.11.2026
+**Poprawki**
+- Kafle na ekranach wyższych niż 16:10 (np. iPad) nie są już wyciągnięte w górę – zachowują proporcje jak na tablecie 16:10, a wolne miejsce rozkłada się równo nad i pod kaflami.
+
 ### 1.0.11 – 18.11.2026
 **Poprawki**
 - Baterie: lista pokazuje znowu wszystkie czujniki i tablety (baterie oznaczone w HA jako „diagnostyczne” były pomijane) i nie pokazuje baterii auta.
@@ -101,6 +105,10 @@ Each release lists what is new (**Added**), what changed (**Changed**) and what 
 ---
 
 ## English
+
+### 1.0.12 – 2026-11-19
+**Fixed**
+- Tiles on screens taller than 16:10 (e.g. iPad) are no longer stretched vertically – they keep the same proportions as on a 16:10 tablet, with the spare space split evenly above and below.
 
 ### 1.0.11 – 2026-11-18
 **Fixed**

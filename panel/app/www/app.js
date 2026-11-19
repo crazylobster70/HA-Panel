@@ -951,6 +951,11 @@
     // jednostka czcionek kafli: jak 1vw, ale nie większa niż przy proporcjach 16:10 (szerokie okna nie rozpychają napisów)
     document.documentElement.style.setProperty('--u', (Math.min(W / s, land ? (H / s) * 1.6 : W / s) / 100) + 'px');
     document.body.classList.toggle('narrow', !land);
+    // 1.0.12: ekrany wyższe niż 16:10 (iPad 4:3) – kafle zachowują proporcje jak na 1280×800,
+    // nadmiar wysokości idzie równo nad i pod kafle (zamiast wyciągać kafle w górę)
+    var vh = H / s, dh = (W / s) / 1.6, rs = document.documentElement.style;
+    if (land && vh > dh + 12) { rs.setProperty('--gh', dh + 'px'); rs.setProperty('--gtop', Math.round((vh - dh) / 2) + 'px'); }
+    else { rs.removeProperty('--gh'); rs.removeProperty('--gtop'); }
     FIT = { s: s, narrow: !land, ncols: W / s >= 700 ? 3 : 2 };
     document.documentElement.style.setProperty('--ncols', FIT.ncols);
     return FIT;
@@ -1572,7 +1577,7 @@
   var BGN = { turkus: 'Turkus', pomarancz: 'Pomarańcz', niebo: 'Niebo', fiolet: 'Fiolet', zielen: 'Zieleń', grafit: 'Grafit', noc: 'Noc' };
 
   // ---------- Ustawienia (0.6): dwie kolumny jak w Rehome ----------
-  var VERSION = '1.0.11';
+  var VERSION = '1.0.12';
   var SET = { cat: 'ha', q: '' };
   var SET_CATS = [
     [['ha', 'Home Assistant', '#ff9f0a', 'home']],
